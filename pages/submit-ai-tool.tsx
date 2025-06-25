@@ -1,18 +1,11 @@
-'use client';
-
 import { useState } from 'react';
 
-export default function SubmitAITool() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    toolName: '',
-    description: '',
-  });
+export default function SubmitAiTool() {
+  const [form, setForm] = useState({ name: '', description: '', category: '' });
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,53 +13,49 @@ export default function SubmitAITool() {
     const res = await fetch('/api/ai-tools', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(form),
     });
+
     if (res.ok) {
       setSuccess(true);
-      setFormData({ name: '', email: '', toolName: '', description: '' });
+      setForm({ name: '', description: '', category: '' });
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white">
-      <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded shadow-md w-full max-w-lg">
-        <h2 className="text-2xl mb-4">Submit AI Tool Request</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+      <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded shadow-lg w-full max-w-md">
+        <h1 className="text-2xl mb-4 text-white">🚀 Submit AI Tool</h1>
         <input
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          type="text"
           name="name"
-          placeholder="Full Name"
-          value={formData.name}
+          placeholder="Tool Name"
+          value={form.name}
           onChange={handleChange}
+          className="w-full p-2 mb-4 rounded"
           required
         />
         <input
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
-          name="email"
-          placeholder="Email"
-          type="email"
-          value={formData.email}
+          type="text"
+          name="category"
+          placeholder="Category"
+          value={form.category}
           onChange={handleChange}
-          required
-        />
-        <input
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
-          name="toolName"
-          placeholder="AI Tool Name"
-          value={formData.toolName}
-          onChange={handleChange}
+          className="w-full p-2 mb-4 rounded"
           required
         />
         <textarea
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
           name="description"
-          placeholder="Description / Reason"
-          value={formData.description}
+          placeholder="Description"
+          value={form.description}
           onChange={handleChange}
+          className="w-full p-2 mb-4 rounded"
           required
         />
-        <button type="submit" className="bg-green-500 px-4 py-2 rounded hover:bg-green-600">Submit</button>
-        {success && <p className="mt-2 text-green-300">✅ Request submitted successfully!</p>}
+        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+          Submit
+        </button>
+        {success && <p className="text-green-300 mt-2">✅ Tool submitted successfully!</p>}
       </form>
     </div>
   );

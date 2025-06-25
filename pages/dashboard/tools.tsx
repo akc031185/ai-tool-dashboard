@@ -1,46 +1,39 @@
-'use client';
+import useSWR from 'swr';
 
-import { useEffect, useState } from 'react';
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-interface AiTool {
+type AiTool = {
   _id: string;
   name: string;
-  email: string;
-  toolName: string;
-  description: string;
-  createdAt: string;
-}
+  category: string;
+  progress: string;
+};
 
 export default function ToolsDashboard() {
-  const [tools, setTools] = useState<AiTool[]>([]);
+  const { data, error, isLoading } = useSWR('/api/ai-tools', fetcher);
 
-  useEffect(() => {
-    fetch('/api/ai-tools')
-      .then((res) => res.json())
-      .then((data) => setTools(data));
-  }, []);
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading tools.</div>;
+
+  const tools: AiTool[] = data.tools;  // ✅ Type your fetched tools here
 
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white">
-      <h2 className="text-3xl font-bold mb-4">🚀 Dashboard: AI Tool Submissions</h2>
-      <table className="w-full bg-gray-800 rounded">
+    <div>
+      <h1>AI Tools Dashboard</h1>
+      <table>
         <thead>
           <tr>
-            <th className="p-2">Name</th>
-            <th className="p-2">Email</th>
-            <th className="p-2">Tool Name</th>
-            <th className="p-2">Description</th>
-            <th className="p-2">Date</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Progress</th>
           </tr>
         </thead>
         <tbody>
-          {tools.map((tool) => (
-            <tr key={tool._id} className="border-t border-gray-700">
-              <td className="p-2">{tool.name}</td>
-              <td className="p-2">{tool.email}</td>
-              <td className="p-2">{tool.toolName}</td>
-              <td className="p-2">{tool.description}</td>
-              <td className="p-2">{new Date(tool.createdAt).toLocaleString()}</td>
+          {tools.map((tool: AiTool) => (  // ✅ Explicitly type "tool"
+            <tr key={tool._id}>
+              <td>{tool.name}</td>
+              <td>{tool.category}</td>
+              <td>{tool.progress}</td>
             </tr>
           ))}
         </tbody>
