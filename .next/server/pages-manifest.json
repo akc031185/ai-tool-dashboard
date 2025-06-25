@@ -2,8 +2,5 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/api/requests": "pages/api/requests.js",
-  "/submit": "pages/submit.js",
-  "/dashboard": "pages/dashboard.js"
+  "/api/requests": "pages/api/requests.js"
 }
