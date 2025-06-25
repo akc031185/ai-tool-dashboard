@@ -3,7 +3,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Navbar from '../../components/Navbar';
+//import Navbar from '../../components/Navbar';
 
 export default function RequestDetail() {
   const router = useRouter();
