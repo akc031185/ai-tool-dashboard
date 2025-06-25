@@ -1,3 +1,4 @@
+// pages/api/ai-tools/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '@/lib/dbConnect';
 import AiTool from '@/models/AiTool';
@@ -8,6 +9,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const { name, description } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({ success: false, error: 'Missing name or description' });
+    }
 
     try {
       const aiResponse = await openai.chat.completions.create({
@@ -24,7 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ],
       });
 
-      // ✅ Null Safety Check for AI Response Content
       const aiMessage = aiResponse.choices[0]?.message?.content;
 
       if (!aiMessage) {
@@ -38,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name,
         description,
         category: suggestedCategory,
-        progress: 'Draft',
+        progress: 'Draft', // 👈 New progress field
       });
 
       await newTool.save();
@@ -46,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(201).json({ success: true, tool: newTool });
     } catch (error) {
       console.error('AI categorization error:', error);
-      res.status(500).json({ success: false, error: 'AI Categorization failed' });
+      res.status(500).json({ success: false, error: 'AI categorization failed' });
     }
   } else if (req.method === 'GET') {
     try {
