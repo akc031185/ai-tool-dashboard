@@ -6,8 +6,12 @@ const AiToolSchema = new mongoose.Schema({
   description: String,
   progress: {
     type: String,
-    default: 'Draft',  // <--- NEW Progress field
+    default: 'Draft',
   },
+  // Contact Information
+  contactName: String,
+  contactEmail: String,
+  contactPhone: String,
   createdAt: {
     type: Date,
     default: Date.now,

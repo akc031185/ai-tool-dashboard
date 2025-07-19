@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   await dbConnect();
 
   if (req.method === 'POST') {
-    const { name, description } = req.body;
+    const { name, description, contactName, contactEmail, contactPhone } = req.body;
 
     if (!name || !description) {
       return res.status(400).json({ success: false, error: 'Missing name or description' });
@@ -55,7 +55,10 @@ Category:`
         name,
         description,
         category: suggestedCategory,
-        progress: 'Draft', // 👈 New progress field
+        progress: 'Draft',
+        contactName,
+        contactEmail,
+        contactPhone,
       });
 
       await newTool.save();
