@@ -63,8 +63,9 @@ Category:`
       res.status(201).json({ success: true, tool: newTool });
     } catch (error) {
       console.error('Claude categorization error:', error);
-      console.error('Error details:', error.message);
-      res.status(500).json({ success: false, error: 'Claude categorization failed', details: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error details:', errorMessage);
+      res.status(500).json({ success: false, error: 'Claude categorization failed', details: errorMessage });
     }
   } else if (req.method === 'GET') {
     try {
