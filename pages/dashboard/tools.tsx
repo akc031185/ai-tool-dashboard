@@ -8,6 +8,11 @@ type AiTool = {
   name: string;
   category: string;
   progress: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  description?: string;
+  createdAt?: string;
 };
 
 export default function ToolsDashboard() {
@@ -45,9 +50,11 @@ export default function ToolsDashboard() {
           <table className="w-full">
             <thead className="bg-gray-800 text-white">
               <tr>
-                <th className="px-6 py-4 text-left font-semibold">Name</th>
+                <th className="px-6 py-4 text-left font-semibold">Tool Name</th>
                 <th className="px-6 py-4 text-left font-semibold">Category</th>
+                <th className="px-6 py-4 text-left font-semibold">Submitter</th>
                 <th className="px-6 py-4 text-left font-semibold">Progress</th>
+                <th className="px-6 py-4 text-left font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -55,10 +62,20 @@ export default function ToolsDashboard() {
                 <tr key={tool._id} className="border-b hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">{tool.name}</td>
                   <td className="px-6 py-4 text-gray-600">{tool.category}</td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {tool.contactName || 'Anonymous'}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                       {tool.progress}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link href={`/project-progress/${tool._id}`}>
+                      <button className="bg-purple-500 text-white px-4 py-2 rounded text-sm font-medium hover:bg-purple-600 transition-colors">
+                        View Progress
+                      </button>
+                    </Link>
                   </td>
                 </tr>
               ))}
