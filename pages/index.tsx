@@ -5,6 +5,49 @@ export default function Home() {
     <div className="min-h-screen text-white" style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'
     }}>
+      {/* Header Navigation */}
+      <header className="w-full py-4 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          {/* Logo/Brand */}
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">🚀</span>
+            <span className="text-xl font-bold">AI Tool Dashboard</span>
+          </div>
+          
+          {/* Navigation Links */}
+          <nav className="hidden md:flex space-x-8">
+            <Link href="/" className="text-white hover:text-yellow-300 transition-colors duration-200 font-medium">
+              Home
+            </Link>
+            <Link href="#about" className="text-white hover:text-yellow-300 transition-colors duration-200 font-medium">
+              About
+            </Link>
+            <Link href="/dashboard/tools" className="text-white hover:text-yellow-300 transition-colors duration-200 font-medium">
+              Dashboard
+            </Link>
+            <Link href="/submit-ai-tool" className="text-white hover:text-yellow-300 transition-colors duration-200 font-medium">
+              Submit Tool
+            </Link>
+          </nav>
+          
+          {/* Login Button */}
+          <div className="flex items-center space-x-4">
+            <Link href="#login">
+              <button className="bg-white/20 text-white px-4 py-2 rounded-full font-medium hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30">
+                Login
+              </button>
+            </Link>
+            
+            {/* Mobile Menu Button */}
+            <button className="md:hidden text-white">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+      
       <div className="max-w-6xl mx-auto px-5 py-5">
         {/* Header */}
         <header className="text-center mb-12 pt-10 pb-12">
@@ -217,6 +260,90 @@ export default function Home() {
             </div>
           </div>
         </section>
+        
+        {/* About Section */}
+        <section id="about" className="my-20 p-10 bg-white/10 rounded-3xl backdrop-blur-lg">
+          <h2 className="text-4xl text-center mb-10 font-semibold">About AI Tool Dashboard</h2>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h3 className="text-2xl font-semibold mb-4">🌟 Our Mission</h3>
+              <p className="opacity-90 leading-relaxed mb-6">
+                We're building the world's most comprehensive platform for AI tool discovery and collaboration. 
+                Our mission is to democratize access to artificial intelligence by connecting innovators, 
+                developers, and businesses with the tools they need to succeed.
+              </p>
+              
+              <h3 className="text-2xl font-semibold mb-4">💡 What We Do</h3>
+              <p className="opacity-90 leading-relaxed mb-6">
+                From machine learning platforms to natural language processing tools, computer vision systems 
+                to robotics controllers - we curate and showcase the most innovative AI solutions across all industries.
+              </p>
+              
+              <div className="flex flex-wrap gap-3">
+                <span className="bg-white/20 text-white py-2 px-4 rounded-full text-sm font-medium">AI Discovery</span>
+                <span className="bg-white/20 text-white py-2 px-4 rounded-full text-sm font-medium">Tool Curation</span>
+                <span className="bg-white/20 text-white py-2 px-4 rounded-full text-sm font-medium">Community Reviews</span>
+                <span className="bg-white/20 text-white py-2 px-4 rounded-full text-sm font-medium">Expert Analysis</span>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-white/15 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="flex items-center mb-3">
+                  <span className="text-3xl mr-3">🎯</span>
+                  <h4 className="text-xl font-semibold">Quality First</h4>
+                </div>
+                <p className="opacity-90">Every tool undergoes rigorous review to ensure it meets our quality standards.</p>
+              </div>
+              
+              <div className="bg-white/15 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="flex items-center mb-3">
+                  <span className="text-3xl mr-3">🤝</span>
+                  <h4 className="text-xl font-semibold">Community Driven</h4>
+                </div>
+                <p className="opacity-90">Built by the community, for the community. Your feedback shapes our platform.</p>
+              </div>
+              
+              <div className="bg-white/15 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="flex items-center mb-3">
+                  <span className="text-3xl mr-3">🚀</span>
+                  <h4 className="text-xl font-semibold">Innovation Hub</h4>
+                </div>
+                <p className="opacity-90">Discover cutting-edge tools before they become mainstream industry standards.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Contact/Footer Section */}
+        <footer className="mt-20 pt-12 pb-8 border-t border-white/20">
+          <div className="text-center">
+            <h3 className="text-2xl font-semibold mb-4">Ready to Get Started?</h3>
+            <p className="opacity-90 mb-8 max-w-2xl mx-auto">
+              Join thousands of developers, researchers, and businesses who trust AI Tool Dashboard 
+              to discover and evaluate the best AI solutions.
+            </p>
+            
+            <div className="flex gap-4 justify-center flex-wrap">
+              <Link href="/submit-ai-tool">
+                <button className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-200">
+                  Submit Your Tool
+                </button>
+              </Link>
+              <Link href="/dashboard/tools">
+                <button className="bg-white/20 text-white px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30">
+                  Explore Tools
+                </button>
+              </Link>
+            </div>
+            
+            <div className="mt-8 pt-8 border-t border-white/10">
+              <p className="opacity-70 text-sm">
+                © 2024 AI Tool Dashboard - InvestorAI Club. Made with ❤️ for the AI community.
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
