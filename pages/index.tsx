@@ -296,7 +296,7 @@ export default function Home() {
             
             <div className="mt-8 pt-8 border-t border-white/10">
               <p className="opacity-70 text-sm">
-                © 2024 AI Tool Dashboard - InvestorAI Club. Made with ❤️ for the AI community.
+                © 2024 AI Tool Dashboard - InvestorAI Club. Made for the AI community.
               </p>
             </div>
           </div>
