@@ -23,40 +23,69 @@ export default function SubmitAiTool() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
-      <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded shadow-lg w-full max-w-md">
-        <h1 className="text-2xl mb-4 text-white">🚀 Submit AI Tool</h1>
-        <input
-          type="text"
-          name="name"
-          placeholder="Tool Name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full p-2 mb-4 rounded"
-          required
-        />
-        <input
-          type="text"
-          name="category"
-          placeholder="Category"
-          value={form.category}
-          onChange={handleChange}
-          className="w-full p-2 mb-4 rounded"
-          required
-        />
-        <textarea
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          className="w-full p-2 mb-4 rounded"
-          required
-        />
-        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
-          Submit
-        </button>
-        {success && <p className="text-green-300 mt-2">✅ Tool submitted successfully!</p>}
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 px-4 py-8">
+      <div className="w-full max-w-lg">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">🚀 Submit AI Tool</h1>
+            <p className="text-gray-600">Request a new AI tool for development</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tool Name</label>
+              <input
+                type="text"
+                name="name"
+                placeholder="Enter tool name"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-colors"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <input
+                type="text"
+                name="category"
+                placeholder="e.g., Data Analysis, Content Creation"
+                value={form.category}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-colors"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <textarea
+                name="description"
+                placeholder="Describe the AI tool functionality and requirements..."
+                value={form.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-colors resize-none"
+                required
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            className="w-full mt-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
+          >
+            Submit Request
+          </button>
+
+          {success && (
+            <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg">
+              <p className="text-green-800 text-center font-medium">✅ Tool submitted successfully!</p>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

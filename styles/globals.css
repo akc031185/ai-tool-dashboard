@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom mobile optimizations */
+@layer base {
+  html {
+    font-size: 16px;
+  }
+  
+  body {
+    @apply bg-white text-gray-900;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Better touch targets for mobile */
+  @media (max-width: 768px) {
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
+
+@layer components {
+  /* Custom button styles */
+  .btn-primary {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold border-2 border-purple-200 hover:bg-purple-50 transition-colors;
+  }
+  
+  /* Form styles */
+  .form-input {
+    @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors;
+  }
+  
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+  }
+}
