@@ -78,8 +78,20 @@ Category:`
       console.error('Database fetch error:', error);
       res.status(500).json({ success: false, error: 'Could not fetch tools' });
     }
+  } else if (req.method === 'DELETE') {
+    try {
+      const result = await AiTool.deleteMany({});
+      res.status(200).json({ 
+        success: true, 
+        message: `Deleted ${result.deletedCount} AI tool submissions`,
+        deletedCount: result.deletedCount
+      });
+    } catch (error) {
+      console.error('Database delete error:', error);
+      res.status(500).json({ success: false, error: 'Could not delete tools' });
+    }
   } else {
-    res.setHeader('Allow', ['GET', 'POST']);
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

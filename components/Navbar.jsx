@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   return (
     <nav className="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
@@ -27,6 +29,26 @@ export default function Navbar() {
               <Link href="/dashboard/tools" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
                 Dashboard
               </Link>
+              {session?.user?.role === 'admin' && (
+                <Link href="/admin" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                  Admin
+                </Link>
+              )}
+              {session ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-pink-100 text-sm">Welcome, {session.user.name}</span>
+                  <button
+                    onClick={() => signOut()}
+                    className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link href="/auth/login" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                  Login
+                </Link>
+              )}
             </div>
           </div>
 
@@ -76,6 +98,39 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              {session?.user?.role === 'admin' && (
+                <Link 
+                  href="/admin" 
+                  className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
+              {session ? (
+                <div className="border-t border-purple-600 pt-2 mt-2">
+                  <div className="px-3 py-2 text-pink-100 text-sm">
+                    Welcome, {session.user.name}
+                  </div>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors w-full text-left"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  href="/auth/login" 
+                  className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
             </div>
           </div>
         )}
