@@ -5,6 +5,15 @@ export interface IUser extends mongoose.Document {
   password: string;
   name: string;
   role: 'admin' | 'user';
+  workspace: {
+    n8nWorkflowId?: string;
+    n8nWorkflowUrl?: string;
+    aiAgentId?: string;
+    aiAgentName?: string;
+    isActive: boolean;
+  };
+  loginCount: number;
+  lastLogin: Date;
   createdAt: Date;
 }
 
@@ -30,6 +39,24 @@ const userSchema = new mongoose.Schema<IUser>({
     type: String,
     enum: ['admin', 'user'],
     default: 'user'
+  },
+  workspace: {
+    n8nWorkflowId: String,
+    n8nWorkflowUrl: String,
+    aiAgentId: String,
+    aiAgentName: String,
+    isActive: {
+      type: Boolean,
+      default: false
+    }
+  },
+  loginCount: {
+    type: Number,
+    default: 0
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true

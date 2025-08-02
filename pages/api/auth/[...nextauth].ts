@@ -32,6 +32,21 @@ export default NextAuth({
             return null
           }
 
+          // Update login count and last login time
+          await User.findByIdAndUpdate(user._id, {
+            $inc: { loginCount: 1 },
+            lastLogin: new Date()
+          });
+
+          // Trigger workspace generation (async, don't wait for completion)
+          fetch(`${process.env.NEXTAUTH_URL}/api/workspace/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user._id.toString() })
+          }).catch(error => {
+            console.error('Workspace generation failed:', error);
+          });
+
           return {
             id: user._id.toString(),
             email: user.email,

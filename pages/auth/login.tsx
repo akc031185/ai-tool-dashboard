@@ -43,8 +43,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
           <div className="text-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">🔐 Admin Login</h1>
-            <p className="text-gray-600">Sign in to manage AI tool submissions</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">🔐 Login</h1>
+            <p className="text-gray-600">Sign in to access your AI workspace</p>
           </div>
 
           {error && (

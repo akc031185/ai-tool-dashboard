@@ -8,14 +8,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
-  const { email, password, name, adminKey } = req.body
+  const { email, password, name } = req.body
 
   if (!email || !password || !name) {
     return res.status(400).json({ message: 'Missing required fields' })
   }
-
-  // Check if this is an admin registration
-  const isAdmin = adminKey === process.env.ADMIN_SECRET_KEY
 
   await dbConnect()
 
@@ -29,12 +26,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
+    // Create user (all users are regular users by default)
     const user = await User.create({
       email,
       password: hashedPassword,
       name,
-      role: isAdmin ? 'admin' : 'user'
+      role: 'user',
+      workspace: {
+        isActive: false
+      },
+      loginCount: 0
     })
 
     // Remove password from response

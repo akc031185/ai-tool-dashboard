@@ -6,8 +6,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    adminKey: ''
+    password: ''
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -58,8 +57,8 @@ export default function Register() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
           <div className="text-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">📝 Create Admin Account</h1>
-            <p className="text-gray-600">Register as admin to manage submissions</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">📝 Create Account</h1>
+            <p className="text-gray-600">Register to get your personal AI workspace</p>
           </div>
 
           {error && (
@@ -121,23 +120,6 @@ export default function Register() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Admin Secret Key
-              </label>
-              <input
-                type="password"
-                name="adminKey"
-                value={formData.adminKey}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-colors"
-                placeholder="Enter admin secret key"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter the admin secret key to register as administrator
-              </p>
-            </div>
 
             <button
               type="submit"
@@ -150,7 +132,7 @@ export default function Register() {
                   Creating Account...
                 </div>
               ) : (
-                'Create Admin Account'
+                'Create Account'
               )}
             </button>
           </form>

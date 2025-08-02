@@ -29,6 +29,11 @@ export default function Navbar() {
               <Link href="/dashboard/tools" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
                 Dashboard
               </Link>
+              {session && (
+                <Link href="/workspace" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                  My Workspace
+                </Link>
+              )}
               {session?.user?.role === 'admin' && (
                 <Link href="/admin" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
                   Admin
@@ -98,6 +103,15 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              {session && (
+                <Link 
+                  href="/workspace" 
+                  className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Workspace
+                </Link>
+              )}
               {session?.user?.role === 'admin' && (
                 <Link 
                   href="/admin" 
