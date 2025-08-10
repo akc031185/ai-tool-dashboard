@@ -1,7 +1,7 @@
 // pages/api/requests/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '@/lib/dbConnect';
-import Request from '@/models/Request';
+import dbConnect from '@/src/lib/dbConnect';
+import Request from '@/src/models/Request';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();

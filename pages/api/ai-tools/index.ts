@@ -1,7 +1,7 @@
 // pages/api/ai-tools/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '@/lib/dbConnect';
-import AiTool from '@/models/AiTool';
+import dbConnect from '@/src/lib/dbConnect';
+import AiTool from '@/src/models/AiTool';
 import Anthropic from '@anthropic-ai/sdk';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

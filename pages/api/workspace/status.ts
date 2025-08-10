@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
+import dbConnect from '@/src/lib/dbConnect';
+import User from '@/src/models/User';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
