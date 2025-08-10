@@ -31,28 +31,6 @@ export default function Home() {
           </Link>
         </div>
         
-        {/* Stats Section */}
-        <section className="text-center my-20 p-10 bg-white/10 rounded-3xl backdrop-blur-lg">
-          <h2 className="text-4xl text-center mb-10 font-semibold">Platform Statistics</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mt-10">
-            <div className="stat-item">
-              <h4 className="text-4xl font-bold mb-2 text-yellow-300">250+</h4>
-              <p className="opacity-90 text-lg">AI Tools Listed</p>
-            </div>
-            <div className="stat-item">
-              <h4 className="text-4xl font-bold mb-2 text-yellow-300">15K+</h4>
-              <p className="opacity-90 text-lg">Active Users</p>
-            </div>
-            <div className="stat-item">
-              <h4 className="text-4xl font-bold mb-2 text-yellow-300">50+</h4>
-              <p className="opacity-90 text-lg">Categories</p>
-            </div>
-            <div className="stat-item">
-              <h4 className="text-4xl font-bold mb-2 text-yellow-300">98%</h4>
-              <p className="opacity-90 text-lg">User Satisfaction</p>
-            </div>
-          </div>
-        </section>
         
         {/* Features Grid */}
         <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 my-15">
