@@ -1,14 +1,49 @@
 import Link from 'next/link';
+import Head from 'next/head';
 import { useSession } from 'next-auth/react';
 import { APP_TAGLINE, PRIMARY_CTA, SECONDARY_CTA, TRACKER_CTA } from '@/src/lib/appMeta';
 
 export default function Home() {
   const { data: session } = useSession();
 
+  const canonicalUrl = 'https://investoraiclub.com';
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'InvestorAI Club',
+    description: APP_TAGLINE,
+    url: canonicalUrl,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${canonicalUrl}/submit-problem`
+      },
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
-    <div className="min-h-screen text-white" style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'
-    }}>
+    <>
+      <Head>
+        <title>InvestorAI Club - Solve Real Estate Problems with AI & Automation</title>
+        <meta name="description" content={APP_TAGLINE} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:title" content="InvestorAI Club - Solve Real Estate Problems with AI & Automation" />
+        <meta property="og:description" content={APP_TAGLINE} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="InvestorAI Club - Solve Real Estate Problems with AI & Automation" />
+        <meta name="twitter:description" content={APP_TAGLINE} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </Head>
+      <div className="min-h-screen text-white" style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'
+      }}>
       <div className="max-w-6xl mx-auto px-4 md:px-5">
         {/* Hero Section */}
         <section className="min-h-screen flex flex-col justify-center pt-20 md:pt-24 pb-12">
@@ -53,5 +88,6 @@ export default function Home() {
         </footer>
       </div>
     </div>
+    </>
   );
 }

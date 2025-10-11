@@ -1,0 +1,20 @@
+# Block all user-facing pages except homepage
+User-agent: *
+Allow: /$
+Disallow: /login
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /workspace/
+Disallow: /project-tracker
+Disallow: /submit-problem
+Disallow: /submit-ai-tool
+Disallow: /requests/
+Disallow: /project-progress/
+Disallow: /problems/
+
+# Block all API routes
+Disallow: /api/
+
+# Sitemap (if you add one in the future)
+# Sitemap: https://yoursite.com/sitemap.xml
