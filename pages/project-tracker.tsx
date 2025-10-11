@@ -43,18 +43,41 @@ export default function ProjectTracker() {
   });
 
   const updateStatus = async (problemId: string, newStatus: ProblemStatus) => {
+    // Optimistically update local data immediately
+    await mutate(
+      '/api/problems/list',
+      async (currentData: any) => {
+        if (!currentData?.problems) return currentData;
+
+        // Create optimistic update
+        const updatedProblems = currentData.problems.map((p: Problem) =>
+          p._id === problemId ? { ...p, status: newStatus } : p
+        );
+
+        return { ...currentData, problems: updatedProblems };
+      },
+      false // Don't revalidate yet
+    );
+
     try {
+      // Make actual API request
       const res = await fetch(`/api/problems/${problemId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (res.ok) {
-        mutate('/api/problems/list');
+      if (!res.ok) {
+        throw new Error('Failed to update status');
       }
+
+      // Revalidate to ensure sync with server
+      mutate('/api/problems/list');
     } catch (err) {
       console.error('Failed to update status:', err);
+
+      // Rollback on error - revalidate to get current server state
+      mutate('/api/problems/list');
     }
   };
 
