@@ -50,6 +50,7 @@ export default function SubmitProblem() {
   const [readiness, setReadiness] = useState({ answeredRequired: 0, totalRequired: 0, percent: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const runTriage = async () => {
     setLoading(true);
@@ -131,6 +132,10 @@ export default function SubmitProblem() {
 
       setOutline(data.outline);
       setStep('outline');
+
+      // Show success toast
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -162,6 +167,15 @@ export default function SubmitProblem() {
             </div>
           )}
 
+          {showSuccessToast && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
+              <span>Solution outline generated successfully!</span>
+              <Link href={TRACKER_CTA.href} className="text-green-600 underline hover:text-green-800 font-medium">
+                View in Tracker →
+              </Link>
+            </div>
+          )}
+
           {/* Step 1: Problem Description */}
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Describe Your Problem</h2>
@@ -175,12 +189,18 @@ export default function SubmitProblem() {
             <button
               onClick={runTriage}
               disabled={!description.trim() || loading}
-              className={`mt-4 px-6 py-3 rounded-lg font-semibold transition ${
+              className={`mt-4 px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2 ${
                 !description.trim() || loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
+              {loading && (
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               {loading ? 'Running Triage...' : 'Run Triage'}
             </button>
           </div>
@@ -292,12 +312,18 @@ export default function SubmitProblem() {
               <button
                 onClick={generateOutline}
                 disabled={readiness.percent < 80 || loading}
-                className={`px-6 py-3 rounded-lg font-semibold transition ${
+                className={`px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2 ${
                   readiness.percent < 80 || loading
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
               >
+                {loading && (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
                 {loading ? 'Generating Outline...' : 'Generate Solution Outline'}
               </button>
             </div>
