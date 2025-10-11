@@ -29,6 +29,7 @@ export const config = {
     '/project-tracker',
     '/problems/:path*',
     '/dashboard/:path*',
+    '/admin/:path*',
     '/api/:path*',
   ],
 };

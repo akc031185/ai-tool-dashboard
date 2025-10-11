@@ -1,270 +1,350 @@
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/router'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import Link from 'next/link';
+import { APP_SHORT } from '@/src/lib/appMeta';
 
-interface AiTool {
-  _id: string
-  name: string
-  category: string
-  description: string
-  progress: string
-  contactName?: string
-  contactEmail?: string
-  contactPhone?: string
-  createdAt: string
+interface Problem {
+  _id: string;
+  rawDescription: string;
+  status: 'draft' | 'in-progress' | 'complete';
+  triage?: {
+    kind: string[];
+    domains: Array<{ label: string; score: number }>;
+  };
+  solutionOutline?: string;
+  userId: {
+    _id: string;
+    email: string;
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function AdminPanel() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [tools, setTools] = useState<AiTool[]>([])
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [clearingAll, setClearingAll] = useState(false)
+export default function AdminConsole() {
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
+
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [domains, setDomains] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
+
+  // Filters
+  const [kindFilter, setKindFilter] = useState('all');
+  const [domainFilter, setDomainFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [outlineFilter, setOutlineFilter] = useState('all');
+
+  // Edit triage drawer
+  const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
+  const [editKind, setEditKind] = useState<string[]>([]);
+  const [editDomains, setEditDomains] = useState('');
+  const [editSubdomains, setEditSubdomains] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading') return
-    
-    if (!session || session.user?.role !== 'admin') {
-      router.push('/auth/login')
-      return
+    if (sessionStatus === 'unauthenticated') {
+      router.push('/login?callbackUrl=/admin');
     }
+  }, [sessionStatus, router]);
 
-    fetchTools()
-  }, [session, status, router])
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated') return;
+    fetchProblems();
+  }, [sessionStatus, kindFilter, domainFilter, statusFilter, outlineFilter]);
 
-  const fetchTools = async () => {
+  const fetchProblems = async () => {
     try {
-      const response = await fetch('/api/ai-tools')
-      const data = await response.json()
-      if (data.success) {
-        setTools(data.tools)
+      setLoading(true);
+      setError('');
+
+      const params = new URLSearchParams();
+      if (kindFilter !== 'all') params.append('kind', kindFilter);
+      if (domainFilter !== 'all') params.append('domain', domainFilter);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (outlineFilter !== 'all') params.append('hasOutline', outlineFilter);
+
+      const res = await fetch(\`/api/admin/problems?\${params.toString()}\`);
+
+      if (res.status === 403) {
+        setError('Access denied: Admin privileges required');
+        setTimeout(() => router.push('/'), 2000);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching tools:', error)
+
+      if (!res.ok) throw new Error('Failed to fetch problems');
+
+      const data = await res.json();
+      setProblems(data.problems || []);
+      setDomains(data.domains || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch problems');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const deleteTool = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) return
+  const handleEditTriage = (problem: Problem) => {
+    setEditingProblem(problem);
+    setEditKind(problem.triage?.kind || []);
+    setEditDomains(problem.triage?.domains?.map(d => \`\${d.label}:\${d.score}\`).join(', ') || '');
+    setEditSubdomains('');
+    setEditTags('');
+  };
 
-    setDeleting(id)
+  const saveTriage = async () => {
+    if (!editingProblem) return;
+    setSaving(true);
+
     try {
-      const response = await fetch(`/api/ai-tools/${id}`, {
-        method: 'DELETE'
-      })
-      
-      if (response.ok) {
-        setTools(tools.filter(tool => tool._id !== id))
-      } else {
-        alert('Failed to delete submission')
+      const domains = editDomains.split(',').map(d => {
+        const parts = d.trim().split(':');
+        return { label: parts[0], score: parts[1] ? parseFloat(parts[1]) : 0.5 };
+      }).filter(d => d.label);
+
+      const subdomains = editSubdomains.split(',').map(d => {
+        const parts = d.trim().split(':');
+        return { label: parts[0], score: parts[1] ? parseFloat(parts[1]) : 0.5 };
+      }).filter(d => d.label);
+
+      const other_tags = editTags.split(',').map(t => t.trim()).filter(Boolean);
+
+      const triageData = {
+        kind: editKind,
+        kind_scores: {
+          AI: editKind.includes('AI') ? 0.8 : 0.0,
+          Automation: editKind.includes('Automation') ? 0.8 : 0.0,
+          Hybrid: editKind.includes('Hybrid') ? 0.8 : 0.0
+        },
+        domains,
+        subdomains,
+        other_tags,
+        needs_more_info: false,
+        missing_info: [],
+        risk_flags: [],
+        notes: 'Admin edited'
+      };
+
+      const res = await fetch(\`/api/admin/problems/\${editingProblem._id}/triage\`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ triage: triageData })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to save triage');
       }
-    } catch (error) {
-      console.error('Error deleting tool:', error)
-      alert('Error deleting submission')
+
+      setToast('Triage updated successfully');
+      setTimeout(() => setToast(''), 3000);
+      setEditingProblem(null);
+      fetchProblems();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Failed to save triage');
+      setTimeout(() => setToast(''), 3000);
     } finally {
-      setDeleting(null)
+      setSaving(false);
     }
-  }
+  };
 
-  const clearAllSubmissions = async () => {
-    if (!confirm('Are you sure you want to delete ALL submissions? This action cannot be undone.')) return
+  const handleStatusAction = async (problemId: string, action: 'lock' | 'finalize') => {
+    if (!confirm(\`Are you sure you want to \${action} this problem?\`)) return;
 
-    setClearingAll(true)
     try {
-      const response = await fetch('/api/ai-tools', {
-        method: 'DELETE'
-      })
-      
-      const data = await response.json()
-      
-      if (response.ok) {
-        setTools([])
-        alert(`Successfully deleted ${data.deletedCount} submissions`)
-      } else {
-        alert('Failed to clear submissions')
-      }
-    } catch (error) {
-      console.error('Error clearing submissions:', error)
-      alert('Error clearing submissions')
-    } finally {
-      setClearingAll(false)
-    }
-  }
+      const res = await fetch(\`/api/admin/problems/\${problemId}/status\`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
 
-  if (status === 'loading' || loading) {
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || \`Failed to \${action}\`);
+      }
+
+      setToast(\`Problem \${action}ed successfully\`);
+      setTimeout(() => setToast(''), 3000);
+      fetchProblems();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : \`Failed to \${action}\`);
+      setTimeout(() => setToast(''), 3000);
+    }
+  };
+
+  const toggleKind = (kind: string) => {
+    if (editKind.includes(kind)) {
+      setEditKind(editKind.filter(k => k !== kind));
+    } else {
+      setEditKind([...editKind, kind]);
+    }
+  };
+
+  if (sessionStatus === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-lg">Loading admin panel...</p>
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin console...</p>
         </div>
       </div>
-    )
-  }
-
-  if (!session || session.user?.role !== 'admin') {
-    return null
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">🔧 Admin Panel</h1>
-              <p className="text-gray-600 mt-1">Manage AI tool submissions</p>
+    <>
+      <Head>
+        <title>{\`Admin Console - \${APP_SHORT}\`}</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Head>
+
+      <div className="min-h-screen bg-gray-50 pt-20 pb-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Console</h1>
+            <p className="text-gray-600">
+              Manage and moderate all problems • Logged in as{' '}
+              <span className="font-semibold text-purple-600">{session?.user?.email}</span>
+            </p>
+          </div>
+
+          {toast && <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">{toast}</div>}
+          {error && <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
+
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kind</label>
+                <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="all">All</option>
+                  <option value="AI">AI</option>
+                  <option value="Automation">Automation</option>
+                  <option value="Hybrid">Hybrid</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
+                <select value={domainFilter} onChange={(e) => setDomainFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="all">All</option>
+                  {domains.map(d => (<option key={d} value={d}>{d}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="all">All</option>
+                  <option value="draft">Draft</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="complete">Complete</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Has Outline</label>
+                <select value={outlineFilter} onChange={(e) => setOutlineFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="all">All</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/dashboard/tools">
-                <button className="bg-purple-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-600 transition-colors">
-                  View Public Dashboard
-                </button>
-              </Link>
-              <button
-                onClick={clearAllSubmissions}
-                disabled={clearingAll || tools.length === 0}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {clearingAll ? 'Clearing...' : 'Clear All Submissions'}
+          </div>
+
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kind</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domain</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outline</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {problems.length === 0 ? (
+                  <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No problems found</td></tr>
+                ) : (
+                  problems.map((problem) => (
+                    <tr key={problem._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(problem.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{problem.userId.email}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{problem.rawDescription}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {problem.triage?.kind?.length ? (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">{problem.triage.kind.join(', ')}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{problem.triage?.domains?.[0]?.label || '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={\`px-2 py-1 rounded-full text-xs font-medium \${
+                          problem.status === 'complete' ? 'bg-green-100 text-green-700' :
+                          problem.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        }\`}>{problem.status}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{problem.solutionOutline ? '✓' : '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <Link href={\`/problems/\${problem._id}\`} className="text-purple-600 hover:text-purple-700 font-medium">Open</Link>
+                          <button onClick={() => handleEditTriage(problem)} className="text-blue-600 hover:text-blue-700 font-medium">Edit</button>
+                          <button onClick={() => handleStatusAction(problem._id, 'lock')} disabled={problem.status !== 'draft'} className={\`font-medium \${problem.status === 'draft' ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400'}\`}>Lock</button>
+                          <button onClick={() => handleStatusAction(problem._id, 'finalize')} disabled={problem.status === 'complete'} className={\`font-medium \${problem.status !== 'complete' ? 'text-green-600 hover:text-green-700' : 'text-gray-400'}\`}>Finalize</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {editingProblem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Triage</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kind</label>
+                <div className="flex gap-3">
+                  {['AI', 'Automation', 'Hybrid'].map(kind => (
+                    <button key={kind} onClick={() => toggleKind(kind)} className={\`px-4 py-2 rounded-lg font-medium \${editKind.includes(kind) ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}\`}>{kind}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Domains (label:score, ...)</label>
+                <input type="text" value={editDomains} onChange={(e) => setEditDomains(e.target.value)} placeholder="Property Management:0.9" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Subdomains (label:score, ...)</label>
+                <input type="text" value={editSubdomains} onChange={(e) => setEditSubdomains(e.target.value)} placeholder="Tenant Screening:0.8" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                <input type="text" value={editTags} onChange={(e) => setEditTags(e.target.value)} placeholder="NLP, Classification" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button onClick={() => setEditingProblem(null)} disabled={saving} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={saveTriage} disabled={saving} className={\`px-4 py-2 rounded-lg font-semibold \${saving ? 'bg-gray-300 text-gray-500' : 'bg-purple-600 text-white hover:bg-purple-700'}\`}>
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl mr-4">📊</div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                <p className="text-2xl font-bold text-gray-900">{tools.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl mr-4">⏳</div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Draft Status</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {tools.filter(tool => tool.progress === 'Draft').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl mr-4">📝</div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">With Contact Info</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {tools.filter(tool => tool.contactEmail).length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Submissions Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">All Submissions</h2>
-          </div>
-
-          {tools.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No submissions yet</h3>
-              <p className="text-gray-500">Submissions will appear here once users submit AI tool requests.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tool Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Submitter
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Submitted
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {tools.map((tool) => (
-                    <tr key={tool._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{tool.name}</div>
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {tool.description}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {tool.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div>{tool.contactName || 'Anonymous'}</div>
-                          {tool.contactEmail && (
-                            <div className="text-gray-500">{tool.contactEmail}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          {tool.progress}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(tool.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link href={`/project-progress/${tool._id}`}>
-                            <button className="text-indigo-600 hover:text-indigo-900">
-                              View
-                            </button>
-                          </Link>
-                          <button
-                            onClick={() => deleteTool(tool._id)}
-                            disabled={deleting === tool._id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                          >
-                            {deleting === tool._id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+      )}
+    </>
+  );
 }

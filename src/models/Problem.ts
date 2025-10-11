@@ -22,6 +22,12 @@ export interface IProblem extends mongoose.Document {
     required?: boolean;
   }>;
   solutionOutline?: string;
+  audits?: Array<{
+    at: Date;
+    byUserId: mongoose.Types.ObjectId;
+    action: string;
+    details?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,7 +76,23 @@ const problemSchema = new mongoose.Schema<IProblem>({
     answer: String,
     required: Boolean
   }],
-  solutionOutline: String
+  solutionOutline: String,
+  audits: [{
+    at: {
+      type: Date,
+      default: Date.now
+    },
+    byUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    action: {
+      type: String,
+      required: true
+    },
+    details: String
+  }]
 }, {
   timestamps: true
 });
