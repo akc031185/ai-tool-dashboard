@@ -6,7 +6,7 @@ import Problem from '@/src/models/Problem';
 import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'PATCH') {
+  if (req.method !== 'GET' && req.method !== 'PATCH') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -36,27 +36,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ message: 'Forbidden: Not your problem' });
     }
 
-    // Update status if provided
-    const { status } = req.body;
+    // Handle GET request - return problem details
+    if (req.method === 'GET') {
+      const problemData = await Problem.findById(id)
+        .select('_id rawDescription status triage followUps solutionOutline createdAt updatedAt')
+        .lean();
 
-    if (status && !['draft', 'in-progress', 'complete'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
+      return res.status(200).json({ success: true, problem: problemData });
     }
 
-    if (status) {
-      problem.status = status;
+    // Handle PATCH request - update problem
+    if (req.method === 'PATCH') {
+      const { status } = req.body;
+
+      if (status && !['draft', 'in-progress', 'complete'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value' });
+      }
+
+      if (status) {
+        problem.status = status;
+      }
+
+      await problem.save();
+
+      // Return updated fields
+      const updated = await Problem.findById(id)
+        .select('_id rawDescription status triage followUps solutionOutline updatedAt')
+        .lean();
+
+      return res.status(200).json({ success: true, problem: updated });
     }
-
-    await problem.save();
-
-    // Return minimal fields
-    const updated = await Problem.findById(id)
-      .select('_id rawDescription status triage followUps solutionOutline updatedAt')
-      .lean();
-
-    res.status(200).json({ success: true, problem: updated });
   } catch (error) {
-    console.error('Problem update error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update problem' });
+    console.error('Problem operation error:', error);
+    res.status(500).json({ success: false, error: 'Failed to process problem request' });
   }
 }
