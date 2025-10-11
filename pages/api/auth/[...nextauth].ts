@@ -13,7 +13,13 @@ export default NextAuth({
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('🔐 Authorize called with credentials:', {
+          emailOrUsername: credentials?.emailOrUsername,
+          hasPassword: !!credentials?.password
+        });
+
         if (!credentials?.emailOrUsername || !credentials?.password) {
+          console.log('❌ Missing credentials');
           return null
         }
 
@@ -27,6 +33,8 @@ export default NextAuth({
               { username: credentials.emailOrUsername }
             ]
           })
+
+          console.log('👤 User found:', !!user);
 
           if (!user) {
             return null
