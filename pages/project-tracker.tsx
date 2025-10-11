@@ -185,7 +185,7 @@ export default function ProjectTracker() {
   return (
     <>
       <Head>
-        <title>{TRACKER_CTA.label} - {APP_SHORT}</title>
+        <title>{`${TRACKER_CTA.label} - ${APP_SHORT}`}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
 

@@ -44,7 +44,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login - {APP_SHORT}</title>
+        <title>{`Login - ${APP_SHORT}`}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
 

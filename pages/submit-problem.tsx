@@ -144,7 +144,7 @@ export default function SubmitProblem() {
   return (
     <>
       <Head>
-        <title>{PRIMARY_CTA.label} - {APP_SHORT}</title>
+        <title>{`${PRIMARY_CTA.label} - ${APP_SHORT}`}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
 
