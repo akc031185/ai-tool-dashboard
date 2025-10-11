@@ -12,8 +12,8 @@ interface Problem {
   rawDescription: string;
   status: ProblemStatus;
   triage?: {
-    kind: 'AI' | 'Automation' | 'Hybrid';
-    domains: string[];
+    kind: Array<'AI' | 'Automation' | 'Hybrid'>;
+    domains: Array<{ label: string; score: number }>;
   };
   followUps?: Array<{ question: string; answer?: string }>;
   solutionOutline?: string;
@@ -99,14 +99,14 @@ export default function ProjectTracker() {
       <p className="text-sm text-gray-800 mb-3 line-clamp-3">{problem.rawDescription}</p>
 
       <div className="flex flex-wrap gap-2 mb-3">
-        {problem.triage?.kind && (
+        {problem.triage?.kind && problem.triage.kind.length > 0 && (
           <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-            {problem.triage.kind}
+            {problem.triage.kind.join(', ')}
           </span>
         )}
         {problem.triage?.domains && problem.triage.domains[0] && (
           <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-            {problem.triage.domains[0]}
+            {problem.triage.domains[0].label}
           </span>
         )}
       </div>
