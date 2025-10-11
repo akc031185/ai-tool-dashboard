@@ -1,0 +1,127 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import dbConnect from '@/src/lib/dbConnect';
+import Problem from '@/src/models/Problem';
+import { callOpenAIJSON } from '@/src/lib/openai';
+import mongoose from 'mongoose';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session?.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const { problemId, rawDescription } = req.body;
+
+  if (!rawDescription || typeof rawDescription !== 'string' || rawDescription.trim().length === 0) {
+    return res.status(400).json({ message: 'rawDescription is required' });
+  }
+
+  if (problemId && !mongoose.Types.ObjectId.isValid(problemId)) {
+    return res.status(400).json({ message: 'Invalid problemId' });
+  }
+
+  await dbConnect();
+
+  try {
+    const userId = (session.user as any).id;
+
+    // Find or create problem
+    let problem;
+    if (problemId) {
+      problem = await Problem.findById(problemId);
+      if (!problem) {
+        return res.status(404).json({ message: 'Problem not found' });
+      }
+      if (problem.userId.toString() !== userId) {
+        return res.status(403).json({ message: 'Forbidden: Not your problem' });
+      }
+    } else {
+      // Create new problem
+      problem = new Problem({
+        userId,
+        rawDescription: rawDescription.trim(),
+        status: 'draft',
+      });
+      await problem.save();
+    }
+
+    // Call OpenAI for triage
+    const systemPrompt = `You are a solutions architect for real estate investors. Your job is to triage workflow problems and classify them.
+
+Return ONLY valid JSON (no prose) with this exact structure:
+{
+  "kind": ["AI", "Automation", "Hybrid"],
+  "kind_scores": { "AI": 0.0-1.0, "Automation": 0.0-1.0, "Hybrid": 0.0-1.0 },
+  "domains": [{ "label": "string", "score": 0.0-1.0 }],
+  "subdomains": [{ "label": "string", "score": 0.0-1.0 }],
+  "other_tags": ["tag1", "tag2"],
+  "needs_more_info": true/false,
+  "missing_info": ["What is missing?"],
+  "risk_flags": ["Any concerns?"],
+  "notes": "Brief analysis"
+}
+
+Classification guidelines:
+- kind: Can be multi-label. Include "AI" if it needs intelligence/reasoning, "Automation" if it's rule-based workflow, "Hybrid" if it's both.
+- kind_scores: Confidence scores for each kind (sum doesn't need to be 1.0)
+- domains: Top 2-3 relevant domains (e.g., "Property Management", "Lead Generation", "Data Analysis", "Document Processing")
+- subdomains: Top 2-3 subdomains within those domains
+- other_tags: Any other relevant tags
+- needs_more_info: true if the problem is too vague or missing critical details
+- missing_info: List of specific questions to ask if needs_more_info is true
+- risk_flags: Any potential issues (e.g., "Requires third-party API", "Complex integration", "High data volume")
+- notes: Brief 1-2 sentence summary of your analysis
+
+Be specific and practical. Focus on what would help build a solution.`;
+
+    const userPrompt = `Problem description:\n\n${rawDescription.trim()}`;
+
+    const triageResult = await callOpenAIJSON({
+      model: 'gpt-4o-mini',
+      system: systemPrompt,
+      user: userPrompt,
+      maxTokens: 600,
+      temperature: 0.2,
+    });
+
+    // Validate triage result structure
+    if (!triageResult.kind || !Array.isArray(triageResult.kind)) {
+      throw new Error('Invalid triage result: missing or invalid kind field');
+    }
+
+    // Save triage to problem
+    problem.triage = {
+      kind: triageResult.kind,
+      kind_scores: triageResult.kind_scores || { AI: 0, Automation: 0, Hybrid: 0 },
+      domains: triageResult.domains || [],
+      subdomains: triageResult.subdomains || [],
+      other_tags: triageResult.other_tags || [],
+      needs_more_info: triageResult.needs_more_info || false,
+      missing_info: triageResult.missing_info || [],
+      risk_flags: triageResult.risk_flags || [],
+      notes: triageResult.notes || '',
+    };
+
+    await problem.save();
+
+    res.status(200).json({
+      ok: true,
+      problemId: problem._id.toString(),
+      triage: problem.triage,
+    });
+  } catch (error) {
+    console.error('Triage error:', error);
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to triage problem',
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+}

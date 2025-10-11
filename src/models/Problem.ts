@@ -5,12 +5,21 @@ export interface IProblem extends mongoose.Document {
   rawDescription: string;
   status: 'draft' | 'in-progress' | 'complete';
   triage?: {
-    kind: 'AI' | 'Automation' | 'Hybrid';
-    domains: string[];
+    kind: string[];
+    kind_scores: { AI: number; Automation: number; Hybrid: number };
+    domains: Array<{ label: string; score: number }>;
+    subdomains: Array<{ label: string; score: number }>;
+    other_tags: string[];
+    needs_more_info: boolean;
+    missing_info: string[];
+    risk_flags: string[];
+    notes: string;
   };
   followUps?: Array<{
+    id: string;
     question: string;
     answer?: string;
+    required?: boolean;
   }>;
   solutionOutline?: string;
   createdAt: Date;
@@ -35,15 +44,31 @@ const problemSchema = new mongoose.Schema<IProblem>({
     default: 'draft'
   },
   triage: {
-    kind: {
-      type: String,
-      enum: ['AI', 'Automation', 'Hybrid']
+    kind: [String],
+    kind_scores: {
+      AI: Number,
+      Automation: Number,
+      Hybrid: Number
     },
-    domains: [String]
+    domains: [{
+      label: String,
+      score: Number
+    }],
+    subdomains: [{
+      label: String,
+      score: Number
+    }],
+    other_tags: [String],
+    needs_more_info: Boolean,
+    missing_info: [String],
+    risk_flags: [String],
+    notes: String
   },
   followUps: [{
+    id: String,
     question: String,
-    answer: String
+    answer: String,
+    required: Boolean
   }],
   solutionOutline: String
 }, {
