@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
+import dbConnect from '@/src/lib/dbConnect';
+import User from '@/src/models/User';
 
 interface N8NWorkflow {
   id: string;

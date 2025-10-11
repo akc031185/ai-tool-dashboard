@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Navbar from '../components/Navbar';
+import Navbar from '../src/components/Navbar';
 
 export default function Dashboard() {
   const [requests, setRequests] = useState([]);
