@@ -6,6 +6,8 @@ export interface IUser extends mongoose.Document {
   passwordHash: string;
   name: string;
   role: 'admin' | 'user';
+  timezone?: string;
+  sessionVersion: number;
   workspace: {
     n8nWorkflowId?: string;
     n8nWorkflowUrl?: string;
@@ -46,6 +48,14 @@ const userSchema = new mongoose.Schema<IUser>({
     type: String,
     enum: ['admin', 'user'],
     default: 'user'
+  },
+  timezone: {
+    type: String,
+    default: 'America/New_York'
+  },
+  sessionVersion: {
+    type: Number,
+    default: 0
   },
   workspace: {
     n8nWorkflowId: String,

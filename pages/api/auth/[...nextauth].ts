@@ -65,7 +65,8 @@ export const authOptions: NextAuthOptions = {
             id: user._id.toString(),
             email: user.email,
             name: user.name ?? user.username,
-            role: user.role
+            role: user.role,
+            sessionVersion: user.sessionVersion || 0
           } as any
         } catch (error) {
           console.error('Auth error:', error)
@@ -81,13 +82,34 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.sessionVersion = user.sessionVersion || 0
       }
+
+      // Verify session version on each request
+      if (token.sub) {
+        try {
+          await dbConnect()
+          const dbUser = await User.findById(token.sub).select('sessionVersion')
+          if (dbUser && dbUser.sessionVersion !== undefined) {
+            const tokenVersion = token.sessionVersion as number || 0
+            if (tokenVersion < dbUser.sessionVersion) {
+              // Session has been invalidated
+              console.log('Session invalidated due to version mismatch')
+              return {} as any // Return empty token to force sign-out
+            }
+          }
+        } catch (error) {
+          console.error('Error checking session version:', error)
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role;
+        (session.user as any).sessionVersion = token.sessionVersion;
       }
       return session
     }
