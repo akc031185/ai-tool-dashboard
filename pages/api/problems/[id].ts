@@ -6,7 +6,10 @@ import Problem from '@/src/models/Problem';
 import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET' && req.method !== 'PATCH') {
+  // Set X-Robots-Tag for all responses
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+
+  if (req.method !== 'GET' && req.method !== 'PATCH' && req.method !== 'DELETE') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -65,6 +68,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .lean();
 
       return res.status(200).json({ success: true, problem: updated });
+    }
+
+    // Handle DELETE request - delete problem
+    if (req.method === 'DELETE') {
+      await Problem.findByIdAndDelete(id);
+      return res.status(200).json({ ok: true, message: 'Problem deleted successfully' });
     }
   } catch (error) {
     console.error('Problem operation error:', error);

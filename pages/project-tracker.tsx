@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 import useSWR, { mutate } from 'swr';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { APP_SHORT, TRACKER_CTA, PRIMARY_CTA } from '@/src/lib/appMeta';
 
 type ProblemStatus = 'draft' | 'in-progress' | 'complete';
@@ -81,6 +82,24 @@ export default function ProjectTracker() {
     }
   };
 
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    // Dropped outside a valid droppable
+    if (!destination) {
+      return;
+    }
+
+    // Dropped in the same position
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+      return;
+    }
+
+    // Update status based on destination column
+    const newStatus = destination.droppableId as ProblemStatus;
+    updateStatus(draggableId, newStatus);
+  };
+
   const getRelativeTime = (date: string) => {
     const now = new Date();
     const then = new Date(date);
@@ -94,46 +113,58 @@ export default function ProjectTracker() {
     return `${Math.floor(days / 30)} months ago`;
   };
 
-  const ProblemCard = ({ problem }: { problem: Problem }) => (
-    <div className="bg-white p-4 rounded-lg shadow border border-gray-200 hover:shadow-md transition">
-      <p className="text-sm text-gray-800 mb-3 line-clamp-3">{problem.rawDescription}</p>
-
-      <div className="flex flex-wrap gap-2 mb-3">
-        {problem.triage?.kind && problem.triage.kind.length > 0 && (
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-            {problem.triage.kind.join(', ')}
-          </span>
-        )}
-        {problem.triage?.domains && problem.triage.domains[0] && (
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-            {problem.triage.domains[0].label}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-        <span>{getRelativeTime(problem.updatedAt)}</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <select
-          value={problem.status}
-          onChange={(e) => updateStatus(problem._id, e.target.value as ProblemStatus)}
-          className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+  const ProblemCard = ({ problem, index }: { problem: Problem; index: number }) => (
+    <Draggable draggableId={problem._id} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`bg-white p-4 rounded-lg shadow border border-gray-200 hover:shadow-md transition ${
+            snapshot.isDragging ? 'opacity-80 shadow-xl' : ''
+          }`}
         >
-          <option value="draft">Draft</option>
-          <option value="in-progress">In Progress</option>
-          <option value="complete">Complete</option>
-        </select>
+          <p className="text-sm text-gray-800 mb-3 line-clamp-3">{problem.rawDescription}</p>
 
-        <Link
-          href={`/problems/${problem._id}`}
-          className="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
-        >
-          Open
-        </Link>
-      </div>
-    </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {problem.triage?.kind && problem.triage.kind.length > 0 && (
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
+                {problem.triage.kind.join(', ')}
+              </span>
+            )}
+            {problem.triage?.domains && problem.triage.domains[0] && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                {problem.triage.domains[0].label}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+            <span>{getRelativeTime(problem.updatedAt)}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={problem.status}
+              onChange={(e) => updateStatus(problem._id, e.target.value as ProblemStatus)}
+              className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <option value="draft">Draft</option>
+              <option value="in-progress">In Progress</option>
+              <option value="complete">Complete</option>
+            </select>
+
+            <Link
+              href={`/problems/${problem._id}`}
+              className="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
+            >
+              Open
+            </Link>
+          </div>
+        </div>
+      )}
+    </Draggable>
   );
 
   const TimelineView = ({ problem }: { problem: Problem }) => {
@@ -225,7 +256,7 @@ export default function ProjectTracker() {
           </div>
 
           {/* Controls */}
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4 mb-6 sticky top-20 z-10 md:static">
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
               {/* Filter Pills */}
               <div className="flex flex-wrap gap-2">
@@ -250,7 +281,7 @@ export default function ProjectTracker() {
                 placeholder="Search problems..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none w-full md:w-auto"
               />
             </div>
 
@@ -282,63 +313,119 @@ export default function ProjectTracker() {
           {/* Content */}
           {filteredProblems.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
-              <div className="text-6xl mb-4">📋</div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">No problems yet</h2>
-              <p className="text-gray-600 mb-6">Start by submitting your first problem to track</p>
-              <Link
-                href={PRIMARY_CTA.href}
-                className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
-              >
-                {PRIMARY_CTA.label}
-              </Link>
+              {problems.length === 0 ? (
+                <>
+                  <div className="text-6xl mb-4">📋</div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">No problems yet</h2>
+                  <p className="text-gray-600 mb-6">Start by submitting your first problem to track</p>
+                  <Link
+                    href={PRIMARY_CTA.href}
+                    className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
+                  >
+                    {PRIMARY_CTA.label}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">No results found</h2>
+                  <p className="text-gray-600 mb-6">
+                    {search ? `No problems match "${search}"` : `No problems with status "${filter}"`}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearch('');
+                      setFilter('all');
+                    }}
+                    className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
+                  >
+                    Clear Filters
+                  </button>
+                </>
+              )}
             </div>
           ) : view === 'kanban' ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Draft Column */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
-                  Draft ({filteredProblems.filter((p) => p.status === 'draft').length})
-                </h2>
-                <div className="space-y-3">
-                  {filteredProblems
-                    .filter((p) => p.status === 'draft')
-                    .map((p) => (
-                      <ProblemCard key={p._id} problem={p} />
-                    ))}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Draft Column */}
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
+                    Draft ({filteredProblems.filter((p) => p.status === 'draft').length})
+                  </h2>
+                  <Droppable droppableId="draft">
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-3 min-h-[200px] p-2 rounded-lg transition ${
+                          snapshot.isDraggingOver ? 'bg-gray-100' : ''
+                        }`}
+                      >
+                        {filteredProblems
+                          .filter((p) => p.status === 'draft')
+                          .map((p, index) => (
+                            <ProblemCard key={p._id} problem={p} index={index} />
+                          ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
 
-              {/* In Progress Column */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-                  In Progress ({filteredProblems.filter((p) => p.status === 'in-progress').length})
-                </h2>
-                <div className="space-y-3">
-                  {filteredProblems
-                    .filter((p) => p.status === 'in-progress')
-                    .map((p) => (
-                      <ProblemCard key={p._id} problem={p} />
-                    ))}
+                {/* In Progress Column */}
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                    In Progress ({filteredProblems.filter((p) => p.status === 'in-progress').length})
+                  </h2>
+                  <Droppable droppableId="in-progress">
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-3 min-h-[200px] p-2 rounded-lg transition ${
+                          snapshot.isDraggingOver ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        {filteredProblems
+                          .filter((p) => p.status === 'in-progress')
+                          .map((p, index) => (
+                            <ProblemCard key={p._id} problem={p} index={index} />
+                          ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
 
-              {/* Complete Column */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                  Complete ({filteredProblems.filter((p) => p.status === 'complete').length})
-                </h2>
-                <div className="space-y-3">
-                  {filteredProblems
-                    .filter((p) => p.status === 'complete')
-                    .map((p) => (
-                      <ProblemCard key={p._id} problem={p} />
-                    ))}
+                {/* Complete Column */}
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                    Complete ({filteredProblems.filter((p) => p.status === 'complete').length})
+                  </h2>
+                  <Droppable droppableId="complete">
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-3 min-h-[200px] p-2 rounded-lg transition ${
+                          snapshot.isDraggingOver ? 'bg-green-50' : ''
+                        }`}
+                      >
+                        {filteredProblems
+                          .filter((p) => p.status === 'complete')
+                          .map((p, index) => (
+                            <ProblemCard key={p._id} problem={p} index={index} />
+                          ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
               </div>
-            </div>
+            </DragDropContext>
           ) : (
             <div className="space-y-6">
               {filteredProblems.map((p) => (

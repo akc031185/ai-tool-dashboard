@@ -60,6 +60,9 @@ export default function ProblemDetail() {
   const [error, setError] = useState('');
   const [copyToast, setCopyToast] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -136,6 +139,33 @@ export default function ProblemDetail() {
       setTimeout(() => setCopyToast(''), 3000);
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleteLoading(true);
+
+    try {
+      const res = await fetch(`/api/problems/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete problem');
+      }
+
+      setCopyToast('Problem deleted successfully');
+      setTimeout(() => {
+        router.push(TRACKER_CTA.href);
+      }, 1000);
+    } catch (err) {
+      console.error('Delete error:', err);
+      setCopyToast('Failed to delete problem. Please try again.');
+      setTimeout(() => setCopyToast(''), 3000);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmText('');
     }
   };
 
@@ -216,12 +246,41 @@ export default function ProblemDetail() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-gray-900">Triage Results</h2>
-                <button
-                  onClick={() => copyToClipboard(problem.triage, 'Triage JSON')}
-                  className="text-sm text-gray-600 hover:text-purple-600 underline transition"
-                >
-                  Copy Triage JSON
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => copyToClipboard(problem.triage, 'Triage JSON')}
+                    className="text-sm text-gray-600 hover:text-purple-600 underline transition"
+                  >
+                    Copy Triage JSON
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Re-run triage? This will update the classification.')) return;
+                      try {
+                        const res = await fetch('/api/intake/triage', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            problemId: id,
+                            rawDescription: problem.rawDescription,
+                          }),
+                        });
+                        if (res.ok) {
+                          setCopyToast('Triage updated successfully');
+                          setTimeout(() => router.reload(), 1500);
+                        } else {
+                          throw new Error('Failed to re-run triage');
+                        }
+                      } catch (err) {
+                        setCopyToast('Failed to re-run triage');
+                        setTimeout(() => setCopyToast(''), 3000);
+                      }
+                    }}
+                    className="text-sm px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                  >
+                    Re-run Triage
+                  </button>
+                </div>
               </div>
 
               <div className="mb-4">
@@ -377,8 +436,68 @@ export default function ProblemDetail() {
               </details>
             </div>
           )}
+
+          {/* Danger Zone */}
+          <div className="bg-red-50 border-2 border-red-200 rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-red-900 mb-2">Danger Zone</h2>
+            <p className="text-sm text-red-700 mb-4">
+              Once you delete this problem, there is no going back. Please be certain.
+            </p>
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+            >
+              Delete Problem
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Delete Problem?</h3>
+            <p className="text-gray-700 mb-4">
+              This action cannot be undone. This will permanently delete your problem and all associated data.
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Please type <span className="font-mono font-bold">DELETE</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none mb-6"
+              placeholder="Type DELETE to confirm"
+              autoFocus
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteConfirmText !== 'DELETE' || deleteLoading}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  deleteConfirmText === 'DELETE' && !deleteLoading
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete Problem'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

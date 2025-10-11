@@ -92,7 +92,7 @@ Be specific and practical. Focus on what would help build a solution.`;
 
     const userPrompt = `Problem description:\n\n${rawDescription.trim()}`;
 
-    let triageResult = await callOpenAIJSON({
+    let triageResponse = await callOpenAIJSON({
       model: 'gpt-4o-mini',
       system: systemPrompt,
       user: userPrompt,
@@ -100,16 +100,27 @@ Be specific and practical. Focus on what would help build a solution.`;
       temperature: 0.2,
     });
 
+    // Log telemetry
+    console.log('[LLM Triage]', {
+      problemId: problem._id.toString(),
+      model: triageResponse.telemetry.model,
+      tokens: triageResponse.telemetry.totalTokens,
+      promptTokens: triageResponse.telemetry.promptTokens,
+      completionTokens: triageResponse.telemetry.completionTokens,
+      latencyMs: triageResponse.telemetry.latencyMs,
+      retried: triageResponse.telemetry.retried,
+    });
+
     // Validate with Zod schema
     let validatedTriage;
     try {
-      validatedTriage = TriageSchema.parse(triageResult);
+      validatedTriage = TriageSchema.parse(triageResponse.data);
     } catch (error) {
       if (error instanceof ZodError) {
         // Retry with fix-to-schema instruction
         console.log('Triage validation failed, retrying with schema fix instruction:', error.errors);
 
-        triageResult = await callOpenAIJSON({
+        triageResponse = await callOpenAIJSON({
           model: 'gpt-4o-mini',
           system: systemPrompt + '\n\nIMPORTANT: Your previous response had validation errors. Ensure the JSON strictly matches the schema.',
           user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
@@ -117,8 +128,16 @@ Be specific and practical. Focus on what would help build a solution.`;
           temperature: 0.2,
         });
 
+        // Log retry telemetry
+        console.log('[LLM Triage Retry]', {
+          problemId: problem._id.toString(),
+          model: triageResponse.telemetry.model,
+          tokens: triageResponse.telemetry.totalTokens,
+          latencyMs: triageResponse.telemetry.latencyMs,
+        });
+
         try {
-          validatedTriage = TriageSchema.parse(triageResult);
+          validatedTriage = TriageSchema.parse(triageResponse.data);
         } catch (retryError) {
           return res.status(422).json({
             ok: false,

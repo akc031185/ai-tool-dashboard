@@ -6,18 +6,38 @@ interface CallOpenAIJSONParams {
   temperature?: number;
 }
 
+interface OpenAITelemetry {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  latencyMs: number;
+  retried: boolean;
+}
+
+interface CallOpenAIJSONResult {
+  data: any;
+  telemetry: OpenAITelemetry;
+}
+
 export async function callOpenAIJSON({
   model,
   system,
   user,
   maxTokens = 1000,
   temperature = 0.3,
-}: CallOpenAIJSONParams): Promise<any> {
+}: CallOpenAIJSONParams): Promise<CallOpenAIJSONResult> {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is not set');
   }
+
+  const startTime = Date.now();
+  let totalTokens = 0;
+  let promptTokens = 0;
+  let completionTokens = 0;
+  let retried = false;
 
   const makeRequest = async (messages: Array<{ role: string; content: string }>) => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,6 +63,13 @@ export async function callOpenAIJSON({
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
+    // Extract usage data
+    if (data.usage) {
+      promptTokens = data.usage.prompt_tokens || 0;
+      completionTokens = data.usage.completion_tokens || 0;
+      totalTokens = data.usage.total_tokens || 0;
+    }
+
     if (!content) {
       throw new Error('No content in OpenAI response');
     }
@@ -57,11 +84,25 @@ export async function callOpenAIJSON({
       { role: 'user', content: user },
     ]);
 
-    return JSON.parse(content);
+    const latencyMs = Date.now() - startTime;
+    const parsed = JSON.parse(content);
+
+    return {
+      data: parsed,
+      telemetry: {
+        model,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        latencyMs,
+        retried: false,
+      },
+    };
   } catch (parseError) {
     // Retry with fix instruction
     try {
       console.warn('JSON parse failed, retrying with fix instruction');
+      retried = true;
       const fixedContent = await makeRequest([
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -72,7 +113,20 @@ export async function callOpenAIJSON({
         { role: 'user', content: 'Fix the response to be valid JSON only. No prose, just JSON.' },
       ]);
 
-      return JSON.parse(fixedContent);
+      const latencyMs = Date.now() - startTime;
+      const parsed = JSON.parse(fixedContent);
+
+      return {
+        data: parsed,
+        telemetry: {
+          model,
+          promptTokens,
+          completionTokens,
+          totalTokens,
+          latencyMs,
+          retried: true,
+        },
+      };
     } catch (retryError) {
       console.error('OpenAI JSON parse error after retry:', retryError);
       throw new Error('Failed to get valid JSON from OpenAI after retry');

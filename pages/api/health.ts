@@ -9,11 +9,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const uptimeMs = Date.now() - startTime;
   const env = process.env.NODE_ENV || 'unknown';
+  const buildSha = process.env.VERCEL_GIT_COMMIT_SHA || 'unknown';
 
   res.status(200).json({
     ok: true,
     env,
     uptimeMs,
     time: new Date().toISOString(),
+    buildSha,
   });
 }

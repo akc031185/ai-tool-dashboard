@@ -120,7 +120,7 @@ ${context.followUps.map((f: any) => `Q: ${f.question}\nA: ${f.answer || '(not an
 
 Create a comprehensive build plan for this solution.`;
 
-    let outlineResult = await callOpenAIJSON({
+    let outlineResponse = await callOpenAIJSON({
       model: 'gpt-4o',
       system: systemPrompt,
       user: userPrompt,
@@ -128,16 +128,27 @@ Create a comprehensive build plan for this solution.`;
       temperature: 0.3,
     });
 
+    // Log telemetry
+    console.log('[LLM Outline]', {
+      problemId: problem._id.toString(),
+      model: outlineResponse.telemetry.model,
+      tokens: outlineResponse.telemetry.totalTokens,
+      promptTokens: outlineResponse.telemetry.promptTokens,
+      completionTokens: outlineResponse.telemetry.completionTokens,
+      latencyMs: outlineResponse.telemetry.latencyMs,
+      retried: outlineResponse.telemetry.retried,
+    });
+
     // Validate with Zod schema
     let validatedOutline;
     try {
-      validatedOutline = OutlineSchema.parse(outlineResult);
+      validatedOutline = OutlineSchema.parse(outlineResponse.data);
     } catch (error) {
       if (error instanceof ZodError) {
         // Retry with fix-to-schema instruction
         console.log('Outline validation failed, retrying with schema fix instruction:', error.errors);
 
-        outlineResult = await callOpenAIJSON({
+        outlineResponse = await callOpenAIJSON({
           model: 'gpt-4o',
           system: systemPrompt + '\n\nIMPORTANT: Your previous response had validation errors. Ensure the JSON strictly matches the schema.',
           user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
@@ -145,8 +156,16 @@ Create a comprehensive build plan for this solution.`;
           temperature: 0.3,
         });
 
+        // Log retry telemetry
+        console.log('[LLM Outline Retry]', {
+          problemId: problem._id.toString(),
+          model: outlineResponse.telemetry.model,
+          tokens: outlineResponse.telemetry.totalTokens,
+          latencyMs: outlineResponse.telemetry.latencyMs,
+        });
+
         try {
-          validatedOutline = OutlineSchema.parse(outlineResult);
+          validatedOutline = OutlineSchema.parse(outlineResponse.data);
         } catch (retryError) {
           return res.status(422).json({
             ok: false,
