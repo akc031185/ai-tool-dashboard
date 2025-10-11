@@ -169,7 +169,7 @@ export default function SubmitProblem() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your workflow problem in detail. Be specific about what you're trying to accomplish, current challenges, and desired outcomes."
               className="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
-              disabled={loading || step !== 'description'}
+              disabled={loading}
             />
             <button
               onClick={runTriage}
