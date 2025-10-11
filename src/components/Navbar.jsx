@@ -12,7 +12,7 @@ export default function Navbar() {
   const isActivePath = (path) => router.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 bg-black/20 backdrop-blur-md text-white shadow-lg border-b border-white/10">
+    <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
           {/* Logo */}
@@ -104,7 +104,7 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-black/30 backdrop-blur-lg rounded-lg mt-2">
+            <div className="px-2 pt-2 pb-3 space-y-1 bg-purple-700 rounded-lg mt-2">
               {session && (
                 <>
                   <Link
@@ -145,7 +145,7 @@ export default function Navbar() {
                 </Link>
               )}
               {session ? (
-                <div className="border-t border-white/20 pt-2 mt-2">
+                <div className="border-t border-purple-600 pt-2 mt-2">
                   <button
                     onClick={() => {
                       signOut({ callbackUrl: '/' });
