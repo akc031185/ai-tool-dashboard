@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { APP_SHORT, PRIMARY_CTA, TRACKER_CTA } from '@/src/lib/appMeta';
+import MermaidRenderer from '@/src/components/MermaidRenderer';
 
 type Step = 'description' | 'triage' | 'questions' | 'outline';
 
@@ -345,16 +346,9 @@ export default function SubmitProblem() {
 
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Workflow Diagram</h3>
-                <div className="p-4 bg-gray-50 rounded border border-gray-200 overflow-x-auto">
-                  <pre className="text-xs text-gray-700 whitespace-pre-wrap">{outline.mermaidDiagram}</pre>
+                <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                  <MermaidRenderer code={outline.mermaidDiagram} />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Copy this Mermaid diagram to{' '}
-                  <a href="https://mermaid.live" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline">
-                    mermaid.live
-                  </a>{' '}
-                  to visualize it.
-                </p>
               </div>
 
               <details className="mb-6" open>
