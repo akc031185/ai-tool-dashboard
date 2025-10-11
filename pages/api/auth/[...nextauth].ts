@@ -1,10 +1,10 @@
-import NextAuth from 'next-auth'
+import NextAuth, { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import dbConnect from '@/src/lib/dbConnect'
 import User from '@/src/models/User'
 
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -96,4 +96,6 @@ export default NextAuth({
     signIn: '/login'
   },
   secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here'
-})
+}
+
+export default NextAuth(authOptions)

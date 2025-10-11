@@ -1,0 +1,62 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import dbConnect from '@/src/lib/dbConnect';
+import Problem from '@/src/models/Problem';
+import mongoose from 'mongoose';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'PATCH') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session?.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const { id } = req.query;
+
+  if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid problem ID' });
+  }
+
+  await dbConnect();
+
+  try {
+    // Find problem and check ownership
+    const problem = await Problem.findById(id);
+
+    if (!problem) {
+      return res.status(404).json({ message: 'Problem not found' });
+    }
+
+    if (problem.userId.toString() !== (session.user as any).id) {
+      return res.status(403).json({ message: 'Forbidden: Not your problem' });
+    }
+
+    // Update status if provided
+    const { status } = req.body;
+
+    if (status && !['draft', 'in-progress', 'complete'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    if (status) {
+      problem.status = status;
+    }
+
+    await problem.save();
+
+    // Return minimal fields
+    const updated = await Problem.findById(id)
+      .select('_id rawDescription status triage followUps solutionOutline updatedAt')
+      .lean();
+
+    res.status(200).json({ success: true, problem: updated });
+  } catch (error) {
+    console.error('Problem update error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update problem' });
+  }
+}
