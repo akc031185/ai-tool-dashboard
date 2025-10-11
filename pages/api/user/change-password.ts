@@ -62,6 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Update password and bump sessionVersion to invalidate all sessions
     user.passwordHash = newPasswordHash;
     user.sessionVersion = (user.sessionVersion || 0) + 1;
+    user.mustChangePassword = false; // Clear the forced password change flag
 
     await user.save();
 

@@ -66,7 +66,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name ?? user.username,
             role: user.role,
-            sessionVersion: user.sessionVersion || 0
+            sessionVersion: user.sessionVersion || 0,
+            mustChangePassword: user.mustChangePassword || false
           } as any
         } catch (error) {
           console.error('Auth error:', error)
@@ -83,20 +84,26 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role
         token.sessionVersion = user.sessionVersion || 0
+        token.mustChangePassword = user.mustChangePassword || false
       }
 
-      // Verify session version on each request
+      // Verify session version and mustChangePassword on each request
       if (token.sub) {
         try {
           await dbConnect()
-          const dbUser = await User.findById(token.sub).select('sessionVersion')
-          if (dbUser && dbUser.sessionVersion !== undefined) {
-            const tokenVersion = token.sessionVersion as number || 0
-            if (tokenVersion < dbUser.sessionVersion) {
-              // Session has been invalidated
-              console.log('Session invalidated due to version mismatch')
-              return {} as any // Return empty token to force sign-out
+          const dbUser = await User.findById(token.sub).select('sessionVersion mustChangePassword')
+          if (dbUser) {
+            // Check session version
+            if (dbUser.sessionVersion !== undefined) {
+              const tokenVersion = token.sessionVersion as number || 0
+              if (tokenVersion < dbUser.sessionVersion) {
+                // Session has been invalidated
+                console.log('Session invalidated due to version mismatch')
+                return {} as any // Return empty token to force sign-out
+              }
             }
+            // Update mustChangePassword flag in token from DB
+            token.mustChangePassword = dbUser.mustChangePassword || false
           }
         } catch (error) {
           console.error('Error checking session version:', error)
@@ -110,6 +117,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role;
         (session.user as any).sessionVersion = token.sessionVersion;
+        (session.user as any).mustChangePassword = token.mustChangePassword;
       }
       return session
     }

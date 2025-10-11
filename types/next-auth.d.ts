@@ -8,6 +8,7 @@ declare module 'next-auth' {
     name: string;
     role: 'admin' | 'user';
     sessionVersion?: number;
+    mustChangePassword?: boolean;
   }
 
   interface Session {
@@ -17,6 +18,7 @@ declare module 'next-auth' {
       name: string;
       role: 'admin' | 'user';
       sessionVersion?: number;
+      mustChangePassword?: boolean;
     };
   }
 }
@@ -25,5 +27,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role?: 'admin' | 'user';
     sessionVersion?: number;
+    mustChangePassword?: boolean;
   }
 }

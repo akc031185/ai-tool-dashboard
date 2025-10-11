@@ -41,6 +41,7 @@ async function createAdmin() {
       name,
       passwordHash,
       role: 'admin',
+      mustChangePassword: true, // Force password change on first login
       workspace: {
         isActive: false
       },
