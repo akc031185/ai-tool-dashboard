@@ -69,7 +69,7 @@ export default function AdminConsole() {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (outlineFilter !== 'all') params.append('hasOutline', outlineFilter);
 
-      const res = await fetch(\`/api/admin/problems?\${params.toString()}\`);
+      const res = await fetch(`/api/admin/problems?${params.toString()}`);
 
       if (res.status === 403) {
         setError('Access denied: Admin privileges required');
@@ -92,7 +92,7 @@ export default function AdminConsole() {
   const handleEditTriage = (problem: Problem) => {
     setEditingProblem(problem);
     setEditKind(problem.triage?.kind || []);
-    setEditDomains(problem.triage?.domains?.map(d => \`\${d.label}:\${d.score}\`).join(', ') || '');
+    setEditDomains(problem.triage?.domains?.map(d => `${d.label}:${d.score}`).join(', ') || '');
     setEditSubdomains('');
     setEditTags('');
   };
@@ -130,7 +130,7 @@ export default function AdminConsole() {
         notes: 'Admin edited'
       };
 
-      const res = await fetch(\`/api/admin/problems/\${editingProblem._id}/triage\`, {
+      const res = await fetch(`/api/admin/problems/${editingProblem._id}/triage`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ triage: triageData })
@@ -154,10 +154,10 @@ export default function AdminConsole() {
   };
 
   const handleStatusAction = async (problemId: string, action: 'lock' | 'finalize') => {
-    if (!confirm(\`Are you sure you want to \${action} this problem?\`)) return;
+    if (!confirm(`Are you sure you want to ${action} this problem?`)) return;
 
     try {
-      const res = await fetch(\`/api/admin/problems/\${problemId}/status\`, {
+      const res = await fetch(`/api/admin/problems/${problemId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action })
@@ -165,14 +165,14 @@ export default function AdminConsole() {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || \`Failed to \${action}\`);
+        throw new Error(error.message || `Failed to ${action}`);
       }
 
-      setToast(\`Problem \${action}ed successfully\`);
+      setToast(`Problem ${action}ed successfully`);
       setTimeout(() => setToast(''), 3000);
       fetchProblems();
     } catch (err) {
-      setToast(err instanceof Error ? err.message : \`Failed to \${action}\`);
+      setToast(err instanceof Error ? err.message : `Failed to ${action}`);
       setTimeout(() => setToast(''), 3000);
     }
   };
@@ -199,7 +199,7 @@ export default function AdminConsole() {
   return (
     <>
       <Head>
-        <title>{\`Admin Console - \${APP_SHORT}\`}</title>
+        <title>{`Admin Console - ${APP_SHORT}`}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
 
@@ -287,18 +287,18 @@ export default function AdminConsole() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{problem.triage?.domains?.[0]?.label || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={\`px-2 py-1 rounded-full text-xs font-medium \${
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           problem.status === 'complete' ? 'bg-green-100 text-green-700' :
                           problem.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                        }\`}>{problem.status}</span>
+                        }`}>{problem.status}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{problem.solutionOutline ? '✓' : '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
-                          <Link href={\`/problems/\${problem._id}\`} className="text-purple-600 hover:text-purple-700 font-medium">Open</Link>
+                          <Link href={`/problems/${problem._id}`} className="text-purple-600 hover:text-purple-700 font-medium">Open</Link>
                           <button onClick={() => handleEditTriage(problem)} className="text-blue-600 hover:text-blue-700 font-medium">Edit</button>
-                          <button onClick={() => handleStatusAction(problem._id, 'lock')} disabled={problem.status !== 'draft'} className={\`font-medium \${problem.status === 'draft' ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400'}\`}>Lock</button>
-                          <button onClick={() => handleStatusAction(problem._id, 'finalize')} disabled={problem.status === 'complete'} className={\`font-medium \${problem.status !== 'complete' ? 'text-green-600 hover:text-green-700' : 'text-gray-400'}\`}>Finalize</button>
+                          <button onClick={() => handleStatusAction(problem._id, 'lock')} disabled={problem.status !== 'draft'} className={`font-medium ${problem.status === 'draft' ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400'}`}>Lock</button>
+                          <button onClick={() => handleStatusAction(problem._id, 'finalize')} disabled={problem.status === 'complete'} className={`font-medium ${problem.status !== 'complete' ? 'text-green-600 hover:text-green-700' : 'text-gray-400'}`}>Finalize</button>
                         </div>
                       </td>
                     </tr>
@@ -319,7 +319,7 @@ export default function AdminConsole() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Kind</label>
                 <div className="flex gap-3">
                   {['AI', 'Automation', 'Hybrid'].map(kind => (
-                    <button key={kind} onClick={() => toggleKind(kind)} className={\`px-4 py-2 rounded-lg font-medium \${editKind.includes(kind) ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}\`}>{kind}</button>
+                    <button key={kind} onClick={() => toggleKind(kind)} className={`px-4 py-2 rounded-lg font-medium ${editKind.includes(kind) ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}>{kind}</button>
                   ))}
                 </div>
               </div>
@@ -338,7 +338,7 @@ export default function AdminConsole() {
             </div>
             <div className="flex gap-3 justify-end mt-6">
               <button onClick={() => setEditingProblem(null)} disabled={saving} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={saveTriage} disabled={saving} className={\`px-4 py-2 rounded-lg font-semibold \${saving ? 'bg-gray-300 text-gray-500' : 'bg-purple-600 text-white hover:bg-purple-700'}\`}>
+              <button onClick={saveTriage} disabled={saving} className={`px-4 py-2 rounded-lg font-semibold ${saving ? 'bg-gray-300 text-gray-500' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
