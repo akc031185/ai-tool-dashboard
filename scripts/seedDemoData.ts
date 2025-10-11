@@ -1,5 +1,10 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+
+// Load environment variables from .env.local
+config({ path: resolve(__dirname, '../.env.local') });
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/investoraiclub';
 
@@ -250,7 +255,7 @@ async function seedDemoData() {
       const hashedPassword = await bcrypt.hash(demoUserData.password, 10);
       demoUser = await User.create({
         email: demoUserData.email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         name: demoUserData.name,
       });
       console.log('Demo user created:', demoUser.email);
