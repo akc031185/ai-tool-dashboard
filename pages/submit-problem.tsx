@@ -51,6 +51,7 @@ export default function SubmitProblem() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [copyToast, setCopyToast] = useState('');
 
   const runTriage = async () => {
     setLoading(true);
@@ -147,6 +148,18 @@ export default function SubmitProblem() {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
+  const copyToClipboard = async (data: any, label: string) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      setCopyToast(`${label} copied!`);
+      setTimeout(() => setCopyToast(''), 3000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      setCopyToast('Failed to copy');
+      setTimeout(() => setCopyToast(''), 3000);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -173,6 +186,12 @@ export default function SubmitProblem() {
               <Link href={TRACKER_CTA.href} className="text-green-600 underline hover:text-green-800 font-medium">
                 View in Tracker →
               </Link>
+            </div>
+          )}
+
+          {copyToast && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+              {copyToast}
             </div>
           )}
 
@@ -208,7 +227,15 @@ export default function SubmitProblem() {
           {/* Step 2: Triage Results */}
           {triage && (
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Triage Results</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-gray-900">2. Triage Results</h2>
+                <button
+                  onClick={() => copyToClipboard(triage, 'Triage JSON')}
+                  className="text-sm text-gray-600 hover:text-purple-600 underline transition"
+                >
+                  Copy Triage JSON
+                </button>
+              </div>
 
               <div className="mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Classification:</h3>
@@ -332,7 +359,15 @@ export default function SubmitProblem() {
           {/* Step 4: Solution Outline */}
           {outline && (
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Solution Outline</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-gray-900">4. Solution Outline</h2>
+                <button
+                  onClick={() => copyToClipboard(outline, 'Outline JSON')}
+                  className="text-sm text-gray-600 hover:text-purple-600 underline transition"
+                >
+                  Copy Outline JSON
+                </button>
+              </div>
 
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Summary</h3>
