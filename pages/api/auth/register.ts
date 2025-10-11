@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create user (all users are regular users by default)
     const user = await User.create({
       email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       name,
       role: 'user',
       workspace: {
@@ -38,8 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       loginCount: 0
     })
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user.toObject()
+    // Remove passwordHash from response
+    const { passwordHash: _, ...userWithoutPassword } = user.toObject()
 
     res.status(201).json({ 
       message: 'User created successfully', 

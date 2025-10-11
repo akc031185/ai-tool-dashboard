@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 
 export interface IUser extends mongoose.Document {
   email: string;
-  password: string;
+  username?: string;
+  passwordHash: string;
   name: string;
   role: 'admin' | 'user';
   workspace: {
@@ -25,7 +26,13 @@ const userSchema = new mongoose.Schema<IUser>({
     lowercase: true,
     trim: true
   },
-  password: {
+  username: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
+  },
+  passwordHash: {
     type: String,
     required: [true, 'Password is required'],
     minlength: 6

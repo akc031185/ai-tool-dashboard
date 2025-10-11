@@ -9,24 +9,30 @@ export default NextAuth({
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        emailOrUsername: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.emailOrUsername || !credentials?.password) {
           return null
         }
 
         await dbConnect()
 
         try {
-          const user = await User.findOne({ email: credentials.email })
-          
+          // Lookup by email OR username
+          const user = await User.findOne({
+            $or: [
+              { email: credentials.emailOrUsername.toLowerCase() },
+              { username: credentials.emailOrUsername }
+            ]
+          })
+
           if (!user) {
             return null
           }
 
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.passwordHash)
           
           if (!isPasswordValid) {
             return null
@@ -50,7 +56,7 @@ export default NextAuth({
           return {
             id: user._id.toString(),
             email: user.email,
-            name: user.name,
+            name: user.name ?? user.username,
             role: user.role
           } as any
         } catch (error) {
@@ -79,7 +85,7 @@ export default NextAuth({
     }
   },
   pages: {
-    signIn: '/auth/login'
+    signIn: '/login'
   },
   secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here'
 })
