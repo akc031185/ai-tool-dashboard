@@ -52,6 +52,7 @@ export default function SubmitProblem() {
   const [error, setError] = useState('');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [copyToast, setCopyToast] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const runTriage = async () => {
     setLoading(true);
@@ -157,6 +158,44 @@ export default function SubmitProblem() {
       console.error('Failed to copy:', err);
       setCopyToast('Failed to copy');
       setTimeout(() => setCopyToast(''), 3000);
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!outline) {
+      setCopyToast('Generate outline first');
+      setTimeout(() => setCopyToast(''), 3000);
+      return;
+    }
+
+    setPdfLoading(true);
+
+    try {
+      const res = await fetch('/api/export/outline-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemId }),
+      });
+
+      if (!res.ok) {
+        throw new Error('PDF export failed');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `build-plan-${problemId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('PDF download error:', err);
+      setCopyToast('PDF export failed. Please try again.');
+      setTimeout(() => setCopyToast(''), 3000);
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -361,12 +400,25 @@ export default function SubmitProblem() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-gray-900">4. Solution Outline</h2>
-                <button
-                  onClick={() => copyToClipboard(outline, 'Outline JSON')}
-                  className="text-sm text-gray-600 hover:text-purple-600 underline transition"
-                >
-                  Copy Outline JSON
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => copyToClipboard(outline, 'Outline JSON')}
+                    className="text-sm text-gray-600 hover:text-purple-600 underline transition"
+                  >
+                    Copy Outline JSON
+                  </button>
+                  <button
+                    onClick={downloadPDF}
+                    disabled={pdfLoading}
+                    className={`text-sm px-3 py-1 rounded transition ${
+                      pdfLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                    }`}
+                  >
+                    {pdfLoading ? 'Downloading...' : 'Download PDF'}
+                  </button>
+                </div>
               </div>
 
               <div className="mb-6">
