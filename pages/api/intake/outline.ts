@@ -5,6 +5,7 @@ import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
 import { callOpenAIJSON } from '@/src/lib/openai';
 import { OutlineSchema } from '@/src/lib/schemas';
+import { rateLimit } from '@/src/lib/rateLimit';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
 
@@ -17,6 +18,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!session?.user) {
     return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  // Rate limiting
+  const ip = (req.headers['x-forwarded-for']?.toString().split(',')[0] ?? req.socket.remoteAddress ?? 'unknown') as string;
+  if (!rateLimit(`outline:${ip}`, { windowMs: 60_000, max: 5 })) {
+    return res.status(429).json({ ok: false, error: 'Too many outline requests. Try again soon.' });
   }
 
   const { problemId } = req.body;
