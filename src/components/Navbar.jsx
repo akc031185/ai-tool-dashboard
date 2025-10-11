@@ -1,13 +1,38 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { useState, useEffect, useRef } from 'react';
 import { APP_SHORT, PRIMARY_CTA, TRACKER_CTA, SECONDARY_CTA } from '../lib/appMeta';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const isActivePath = (path) => router.pathname === path;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'U';
+    const names = session.user.name.split(' ');
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
@@ -59,12 +84,55 @@ export default function Navbar() {
               </Link>
             )}
             {session ? (
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="text-white/90 hover:text-pink-200 px-2 md:px-3 py-2 rounded-md text-sm md:text-base font-medium transition-colors"
-              >
-                Logout
-              </button>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center space-x-2 px-2 md:px-3 py-2 rounded-md text-sm md:text-base font-medium transition-colors text-white/90 hover:text-pink-200"
+                >
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold">
+                    {getUserInitials()}
+                  </div>
+                  <span className="hidden md:inline">{session.user.name}</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 text-gray-800">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <div className="border-t border-gray-200"></div>
+                    <Link
+                      href={TRACKER_CTA.href}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      {TRACKER_CTA.label}
+                    </Link>
+                    <div className="border-t border-gray-200"></div>
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        signOut({ callbackUrl: '/' });
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-red-600"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <Link
                 href={SECONDARY_CTA.href}

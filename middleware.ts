@@ -27,6 +27,7 @@ export const config = {
   matcher: [
     '/submit-problem',
     '/project-tracker',
+    '/profile',
     '/problems/:path*',
     '/dashboard/:path*',
     '/admin/:path*',
