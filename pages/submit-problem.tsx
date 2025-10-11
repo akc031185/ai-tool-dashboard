@@ -148,27 +148,7 @@ export default function SubmitProblem() {
         <meta name="robots" content="noindex,nofollow" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <header className="bg-white border-b border-gray-200">
-          <nav className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-            <div className="flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold text-purple-600">
-                {APP_SHORT}
-              </Link>
-              <div className="flex items-center gap-4">
-                <Link href={TRACKER_CTA.href} className="text-gray-700 hover:text-purple-600 font-medium">
-                  {TRACKER_CTA.label}
-                </Link>
-                {session && (
-                  <span className="text-sm text-gray-600">
-                    {session.user?.name}
-                  </span>
-                )}
-              </div>
-            </div>
-          </nav>
-        </header>
-
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-20">
         <div className="max-w-4xl mx-auto py-8 px-4">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">{PRIMARY_CTA.label}</h1>
