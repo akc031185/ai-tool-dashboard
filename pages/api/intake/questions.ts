@@ -145,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const userId = (session.user as any).id;
 
-    const problem = await Problem.findById(problemId).lean();
+    const problem = await Problem.findById(problemId);
 
     if (!problem) {
       return res.status(404).json({ message: 'Problem not found' });
