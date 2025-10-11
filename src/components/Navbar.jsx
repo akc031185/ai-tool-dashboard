@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { APP_SHORT, PRIMARY_CTA, TRACKER_CTA, SECONDARY_CTA } from '../lib/appMeta';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,7 +14,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="text-xl font-bold hover:text-pink-200 transition-colors">
-              🚀 AI Tool Dashboard
+              {APP_SHORT}
             </Link>
           </div>
 
@@ -23,35 +24,34 @@ export default function Navbar() {
               <Link href="/" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
                 Home
               </Link>
-              <Link href="/submit-ai-tool" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
-                Submit Request
-              </Link>
-              <Link href="/dashboard/tools" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
-                Dashboard
-              </Link>
               {session && (
-                <Link href="/workspace" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
-                  My Workspace
-                </Link>
+                <>
+                  <Link href={PRIMARY_CTA.href} className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                    {PRIMARY_CTA.label}
+                  </Link>
+                  <Link href={TRACKER_CTA.href} className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                    {TRACKER_CTA.label}
+                  </Link>
+                </>
               )}
               {session?.user?.role === 'admin' && (
-                <Link href="/admin" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
-                  Admin
+                <Link href="/dashboard" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                  Dashboard
                 </Link>
               )}
               {session ? (
                 <div className="flex items-center space-x-4">
                   <span className="text-pink-100 text-sm">Welcome, {session.user.name}</span>
                   <button
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: '/' })}
                     className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors"
                   >
                     Logout
                   </button>
                 </div>
               ) : (
-                <Link href="/auth/login" className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
-                  Login
+                <Link href={SECONDARY_CTA.href} className="hover:text-pink-200 px-3 py-2 rounded-md font-medium transition-colors">
+                  {SECONDARY_CTA.label}
                 </Link>
               )}
             </div>
@@ -82,43 +82,38 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-purple-700 rounded-lg mt-2">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
-              <Link 
-                href="/submit-ai-tool" 
-                className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Submit Request
-              </Link>
-              <Link 
-                href="/dashboard/tools" 
-                className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
               {session && (
-                <Link 
-                  href="/workspace" 
-                  className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  My Workspace
-                </Link>
+                <>
+                  <Link
+                    href={PRIMARY_CTA.href}
+                    className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {PRIMARY_CTA.label}
+                  </Link>
+                  <Link
+                    href={TRACKER_CTA.href}
+                    className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {TRACKER_CTA.label}
+                  </Link>
+                </>
               )}
               {session?.user?.role === 'admin' && (
-                <Link 
-                  href="/admin" 
+                <Link
+                  href="/dashboard"
                   className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Admin
+                  Dashboard
                 </Link>
               )}
               {session ? (
@@ -128,7 +123,7 @@ export default function Navbar() {
                   </div>
                   <button
                     onClick={() => {
-                      signOut();
+                      signOut({ callbackUrl: '/' });
                       setIsMenuOpen(false);
                     }}
                     className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors w-full text-left"
@@ -137,12 +132,12 @@ export default function Navbar() {
                   </button>
                 </div>
               ) : (
-                <Link 
-                  href="/auth/login" 
+                <Link
+                  href={SECONDARY_CTA.href}
                   className="text-white hover:text-pink-200 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Login
+                  {SECONDARY_CTA.label}
                 </Link>
               )}
             </div>
