@@ -4,7 +4,9 @@ import { authOptions } from '../auth/[...nextauth]';
 import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
 import { callOpenAIJSON } from '@/src/lib/openai';
+import { OutlineSchema } from '@/src/lib/schemas';
 import mongoose from 'mongoose';
+import { ZodError } from 'zod';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -111,7 +113,7 @@ ${context.followUps.map((f: any) => `Q: ${f.question}\nA: ${f.answer || '(not an
 
 Create a comprehensive build plan for this solution.`;
 
-    const outlineResult = await callOpenAIJSON({
+    let outlineResult = await callOpenAIJSON({
       model: 'gpt-4o',
       system: systemPrompt,
       user: userPrompt,
@@ -119,20 +121,46 @@ Create a comprehensive build plan for this solution.`;
       temperature: 0.3,
     });
 
-    // Validate outline result structure
-    if (!outlineResult.summary || !outlineResult.requirements || !outlineResult.nextActions) {
-      throw new Error('Invalid outline result: missing required fields');
+    // Validate with Zod schema
+    let validatedOutline;
+    try {
+      validatedOutline = OutlineSchema.parse(outlineResult);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        // Retry with fix-to-schema instruction
+        console.log('Outline validation failed, retrying with schema fix instruction:', error.errors);
+
+        outlineResult = await callOpenAIJSON({
+          model: 'gpt-4o',
+          system: systemPrompt + '\n\nIMPORTANT: Your previous response had validation errors. Ensure the JSON strictly matches the schema.',
+          user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
+          maxTokens: 2000,
+          temperature: 0.3,
+        });
+
+        try {
+          validatedOutline = OutlineSchema.parse(outlineResult);
+        } catch (retryError) {
+          return res.status(422).json({
+            ok: false,
+            error: 'Invalid outline response from AI',
+            details: retryError instanceof ZodError ? retryError.errors : String(retryError)
+          });
+        }
+      } else {
+        throw error;
+      }
     }
 
-    // Save outline to problem
-    problem.solutionOutline = JSON.stringify(outlineResult);
+    // Save validated outline to problem
+    problem.solutionOutline = JSON.stringify(validatedOutline);
     problem.status = 'in-progress'; // Update status to in-progress
     await problem.save();
 
     res.status(200).json({
       ok: true,
       problemId: problem._id.toString(),
-      outline: outlineResult,
+      outline: validatedOutline,
     });
   } catch (error) {
     console.error('Outline generation error:', error);

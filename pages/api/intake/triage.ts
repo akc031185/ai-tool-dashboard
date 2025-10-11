@@ -4,7 +4,9 @@ import { authOptions } from '../auth/[...nextauth]';
 import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
 import { callOpenAIJSON } from '@/src/lib/openai';
+import { TriageSchema } from '@/src/lib/schemas';
 import mongoose from 'mongoose';
+import { ZodError } from 'zod';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -83,7 +85,7 @@ Be specific and practical. Focus on what would help build a solution.`;
 
     const userPrompt = `Problem description:\n\n${rawDescription.trim()}`;
 
-    const triageResult = await callOpenAIJSON({
+    let triageResult = await callOpenAIJSON({
       model: 'gpt-4o-mini',
       system: systemPrompt,
       user: userPrompt,
@@ -91,23 +93,39 @@ Be specific and practical. Focus on what would help build a solution.`;
       temperature: 0.2,
     });
 
-    // Validate triage result structure
-    if (!triageResult.kind || !Array.isArray(triageResult.kind)) {
-      throw new Error('Invalid triage result: missing or invalid kind field');
+    // Validate with Zod schema
+    let validatedTriage;
+    try {
+      validatedTriage = TriageSchema.parse(triageResult);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        // Retry with fix-to-schema instruction
+        console.log('Triage validation failed, retrying with schema fix instruction:', error.errors);
+
+        triageResult = await callOpenAIJSON({
+          model: 'gpt-4o-mini',
+          system: systemPrompt + '\n\nIMPORTANT: Your previous response had validation errors. Ensure the JSON strictly matches the schema.',
+          user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
+          maxTokens: 600,
+          temperature: 0.2,
+        });
+
+        try {
+          validatedTriage = TriageSchema.parse(triageResult);
+        } catch (retryError) {
+          return res.status(422).json({
+            ok: false,
+            error: 'Invalid triage response from AI',
+            details: retryError instanceof ZodError ? retryError.errors : String(retryError)
+          });
+        }
+      } else {
+        throw error;
+      }
     }
 
-    // Save triage to problem
-    problem.triage = {
-      kind: triageResult.kind,
-      kind_scores: triageResult.kind_scores || { AI: 0, Automation: 0, Hybrid: 0 },
-      domains: triageResult.domains || [],
-      subdomains: triageResult.subdomains || [],
-      other_tags: triageResult.other_tags || [],
-      needs_more_info: triageResult.needs_more_info || false,
-      missing_info: triageResult.missing_info || [],
-      risk_flags: triageResult.risk_flags || [],
-      notes: triageResult.notes || '',
-    };
+    // Save validated triage to problem
+    problem.triage = validatedTriage;
 
     await problem.save();
 
