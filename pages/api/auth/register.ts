@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import bcrypt from 'bcryptjs'
 import dbConnect from '@/src/lib/dbConnect'
 import User from '@/src/models/User'
+import { sendWelcomeEmail } from '@/src/lib/email'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -38,12 +39,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       loginCount: 0
     })
 
+    // Send welcome email (don't fail registration if email fails)
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // Continue with registration even if email fails
+    }
+
     // Remove passwordHash from response
     const { passwordHash: _, ...userWithoutPassword } = user.toObject()
 
-    res.status(201).json({ 
-      message: 'User created successfully', 
-      user: userWithoutPassword 
+    res.status(201).json({
+      message: 'User created successfully',
+      user: userWithoutPassword
     })
   } catch (error) {
     console.error('Registration error:', error)

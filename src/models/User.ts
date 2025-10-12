@@ -9,6 +9,8 @@ export interface IUser extends mongoose.Document {
   timezone?: string;
   sessionVersion: number;
   mustChangePassword: boolean;
+  resetToken?: string;
+  resetTokenExpiry?: Date;
   workspace: {
     n8nWorkflowId?: string;
     n8nWorkflowUrl?: string;
@@ -61,6 +63,14 @@ const userSchema = new mongoose.Schema<IUser>({
   mustChangePassword: {
     type: Boolean,
     default: false
+  },
+  resetToken: {
+    type: String,
+    default: null
+  },
+  resetTokenExpiry: {
+    type: Date,
+    default: null
   },
   workspace: {
     n8nWorkflowId: String,
