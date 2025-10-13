@@ -46,10 +46,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let totalTokensIn = 0;
     let totalTokensOut = 0;
 
-    dailyAnalytics.forEach(day => {
+    dailyAnalytics.forEach((day: any) => {
       totalProblems += day.problems.created || 0;
       totalEvents += day.events.reduce((sum: number, e: any) => sum + e.count, 0);
-      day.llmUsage.forEach(usage => {
+      day.llmUsage.forEach((usage: any) => {
         totalLLMCalls += usage.totalCalls;
         totalTokensIn += usage.totalTokensIn;
         totalTokensOut += usage.totalTokensOut;
@@ -57,8 +57,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Aggregate LLM usage by model across all days
-    const llmByModel = dailyAnalytics.reduce((acc, day) => {
-      day.llmUsage.forEach(usage => {
+    const llmByModel = dailyAnalytics.reduce((acc: any, day: any) => {
+      day.llmUsage.forEach((usage: any) => {
         if (!acc[usage.model]) {
           acc[usage.model] = {
             model: usage.model,
@@ -80,8 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const estimatedCost = estimateTotalCost(llmByModelArray);
 
     // Aggregate top domains across all days
-    const domainCounts = dailyAnalytics.reduce((acc, day) => {
-      day.topDomains.forEach(d => {
+    const domainCounts = dailyAnalytics.reduce((acc: any, day: any) => {
+      day.topDomains.forEach((d: any) => {
         acc[d.domain] = (acc[d.domain] || 0) + d.count;
       });
       return acc;
@@ -101,7 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const todayLLMCalls = await LLMUsage.countDocuments({ at: { $gte: today } });
 
     // Prepare time series data for charts
-    const timeSeries = dailyAnalytics.reverse().map(day => ({
+    const timeSeries = dailyAnalytics.reverse().map((day: any) => ({
       date: day.date.toISOString().split('T')[0],
       problems: day.problems.created,
       events: day.events.reduce((sum: number, e: any) => sum + e.count, 0),
