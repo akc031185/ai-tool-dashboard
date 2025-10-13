@@ -41,6 +41,32 @@ Complete analytics pipeline with event tracking, LLM usage monitoring, and cost 
 
 ---
 
+### Step 10 - Homepage A/B Testing ✅
+**Completed**: October 2025
+
+A/B test implementation for homepage hero messaging with fixed SEO metadata.
+
+**Key Features**:
+- Two hero variants (A: SEO-forward, B: deals-forward)
+- URL parameter control (?v=b forces Variant B)
+- Sticky preference via localStorage
+- Fixed SEO metadata (not affected by A/B test)
+- Event tracking for variant analytics
+- Dev-only variant badge for testing
+
+**Usage**:
+- Default: Variant A (SEO-optimized)
+- Force Variant B: Add `?v=b` to homepage URL
+- Force Variant A: Add `?v=a` to homepage URL
+- Clear preference: Use browser dev tools to clear localStorage key `hero-variant`
+
+**Files**:
+- `src/lib/appMeta.ts` - Hero variants and SEO constants
+- `src/lib/ab.ts` - Variant selection utility
+- `pages/index.tsx` - Homepage with A/B testing
+
+---
+
 ## Architecture
 
 ### Technology Stack
