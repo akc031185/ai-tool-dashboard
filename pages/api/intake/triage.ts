@@ -107,6 +107,9 @@ Be specific and practical. Focus on what would help build a solution.`;
       user: userPrompt,
       maxTokens: 600,
       temperature: 0.2,
+      route: '/api/intake/triage',
+      userId,
+      problemId: problem._id.toString(),
     });
 
     // Log telemetry
@@ -135,6 +138,9 @@ Be specific and practical. Focus on what would help build a solution.`;
           user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
           maxTokens: 600,
           temperature: 0.2,
+          route: '/api/intake/triage',
+          userId,
+          problemId: problem._id.toString(),
         });
 
         // Log retry telemetry

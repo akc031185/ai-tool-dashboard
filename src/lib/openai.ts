@@ -1,9 +1,15 @@
+import { logLLMUsage } from '@/src/lib/logLLMUsage';
+
 interface CallOpenAIJSONParams {
   model: string;
   system: string;
   user: string;
   maxTokens?: number;
   temperature?: number;
+  // Analytics tracking (optional)
+  route?: string;
+  userId?: string;
+  problemId?: string;
 }
 
 interface OpenAITelemetry {
@@ -26,6 +32,9 @@ export async function callOpenAIJSON({
   user,
   maxTokens = 1000,
   temperature = 0.3,
+  route,
+  userId,
+  problemId,
 }: CallOpenAIJSONParams): Promise<CallOpenAIJSONResult> {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -87,6 +96,19 @@ export async function callOpenAIJSON({
     const latencyMs = Date.now() - startTime;
     const parsed = JSON.parse(content);
 
+    // Log LLM usage if route provided
+    if (route) {
+      await logLLMUsage({
+        route,
+        model,
+        ms: latencyMs,
+        tokensIn: promptTokens,
+        tokensOut: completionTokens,
+        userId,
+        problemId,
+      });
+    }
+
     return {
       data: parsed,
       telemetry: {
@@ -115,6 +137,19 @@ export async function callOpenAIJSON({
 
       const latencyMs = Date.now() - startTime;
       const parsed = JSON.parse(fixedContent);
+
+      // Log LLM usage if route provided (retry case)
+      if (route) {
+        await logLLMUsage({
+          route,
+          model,
+          ms: latencyMs,
+          tokensIn: promptTokens,
+          tokensOut: completionTokens,
+          userId,
+          problemId,
+        });
+      }
 
       return {
         data: parsed,

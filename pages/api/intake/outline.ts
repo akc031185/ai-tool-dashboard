@@ -135,6 +135,9 @@ Create a comprehensive build plan for this solution.`;
       user: userPrompt,
       maxTokens: 2000,
       temperature: 0.3,
+      route: '/api/intake/outline',
+      userId,
+      problemId: problem._id.toString(),
     });
 
     // Log telemetry
@@ -163,6 +166,9 @@ Create a comprehensive build plan for this solution.`;
           user: userPrompt + `\n\nPrevious validation errors: ${JSON.stringify(error.errors)}`,
           maxTokens: 2000,
           temperature: 0.3,
+          route: '/api/intake/outline',
+          userId,
+          problemId: problem._id.toString(),
         });
 
         // Log retry telemetry
