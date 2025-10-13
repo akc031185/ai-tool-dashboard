@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return acc;
     }, {} as Record<string, { model: string; totalTokensIn: number; totalTokensOut: number; totalCalls: number }>);
 
-    const llmByModelArray = Object.values(llmByModel);
+    const llmByModelArray = Object.values(llmByModel) as Array<{ model: string; totalTokensIn: number; totalTokensOut: number; totalCalls: number }>;
 
     // Calculate estimated cost
     const estimatedCost = estimateTotalCost(llmByModelArray);
