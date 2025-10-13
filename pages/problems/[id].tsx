@@ -38,6 +38,33 @@ interface Outline {
   nextActions: string[];
 }
 
+interface RFI {
+  _id: string;
+  createdAt: string;
+  createdBy: {
+    _id: string;
+    email: string;
+  };
+  question: string;
+  answer?: string;
+  answeredAt?: string;
+  dueAt?: string;
+  priority?: 'low' | 'normal' | 'high';
+  status: 'open' | 'answered' | 'closed';
+}
+
+interface Activity {
+  _id: string;
+  at: string;
+  by: {
+    _id: string;
+    email: string;
+  };
+  type: string;
+  note?: string;
+  meta?: Record<string, any>;
+}
+
 interface Problem {
   _id: string;
   rawDescription: string;
@@ -45,6 +72,17 @@ interface Problem {
   triage?: TriageResult;
   followUps?: Question[];
   solutionOutline?: string;
+  userId: {
+    _id: string;
+    email: string;
+  };
+  assigneeId?: {
+    _id: string;
+    email: string;
+  };
+  adminLocked?: boolean;
+  rfis?: RFI[];
+  activity?: Activity[];
   createdAt: string;
   updatedAt: string;
 }
