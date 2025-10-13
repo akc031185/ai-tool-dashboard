@@ -6,6 +6,7 @@ import Problem from '@/src/models/Problem';
 import { callOpenAIJSON } from '@/src/lib/openai';
 import { TriageSchema } from '@/src/lib/schemas';
 import { rateLimit } from '@/src/lib/rateLimit';
+import { logEvent } from '@/src/lib/logEvent';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
 
@@ -60,6 +61,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       await problem.save();
     }
+
+    // Log triage.run event
+    await logEvent({
+      type: 'triage.run',
+      userId,
+      problemId: problem._id.toString(),
+      meta: { rawDescriptionLength: rawDescription.trim().length }
+    });
 
     // Call OpenAI for triage
     const systemPrompt = `You are a solutions architect for real estate investors. Your job is to triage workflow problems and classify them.
@@ -155,6 +164,18 @@ Be specific and practical. Focus on what would help build a solution.`;
 
     await problem.save();
 
+    // Log triage.ok event
+    await logEvent({
+      type: 'triage.ok',
+      userId,
+      problemId: problem._id.toString(),
+      meta: {
+        kind: validatedTriage.kind,
+        domains: validatedTriage.domains.map((d: any) => d.label),
+        needsMoreInfo: validatedTriage.needs_more_info
+      }
+    });
+
     res.status(200).json({
       ok: true,
       problemId: problem._id.toString(),
@@ -162,6 +183,18 @@ Be specific and practical. Focus on what would help build a solution.`;
     });
   } catch (error) {
     console.error('Triage error:', error);
+
+    // Log triage.fail event
+    const userId = (session?.user as any)?.id;
+    if (userId && problemId) {
+      await logEvent({
+        type: 'triage.fail',
+        userId,
+        problemId,
+        meta: { error: error instanceof Error ? error.message : String(error) }
+      });
+    }
+
     res.status(500).json({
       ok: false,
       error: 'Failed to triage problem',
