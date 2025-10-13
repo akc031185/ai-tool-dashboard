@@ -6,6 +6,7 @@ import Problem from '@/src/models/Problem';
 import { callOpenAIJSON } from '@/src/lib/openai';
 import { OutlineSchema } from '@/src/lib/schemas';
 import { rateLimit } from '@/src/lib/rateLimit';
+import { logEvent } from '@/src/lib/logEvent';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
 
@@ -72,6 +73,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     }
+
+    // Log outline.run event
+    await logEvent({
+      type: 'outline.run',
+      userId,
+      problemId: problem._id.toString(),
+      meta: { readinessPercent }
+    });
 
     // Build context for OpenAI
     const context = {
@@ -183,6 +192,18 @@ Create a comprehensive build plan for this solution.`;
     problem.status = 'in-progress'; // Update status to in-progress
     await problem.save();
 
+    // Log outline.ok event
+    await logEvent({
+      type: 'outline.ok',
+      userId,
+      problemId: problem._id.toString(),
+      meta: {
+        requirementsCount: validatedOutline.requirements?.length || 0,
+        nextActionsCount: validatedOutline.nextActions?.length || 0,
+        hasDiagram: !!validatedOutline.mermaidDiagram
+      }
+    });
+
     res.status(200).json({
       ok: true,
       problemId: problem._id.toString(),
@@ -190,6 +211,18 @@ Create a comprehensive build plan for this solution.`;
     });
   } catch (error) {
     console.error('Outline generation error:', error);
+
+    // Log outline.fail event
+    const userId = (session?.user as any)?.id;
+    if (userId && problemId) {
+      await logEvent({
+        type: 'outline.fail',
+        userId,
+        problemId,
+        meta: { error: error instanceof Error ? error.message : String(error) }
+      });
+    }
+
     res.status(500).json({
       ok: false,
       error: 'Failed to generate outline',

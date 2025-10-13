@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireAdmin } from '@/src/lib/authz';
 import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
+import { logEvent } from '@/src/lib/logEvent';
 import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -61,6 +62,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     await problem.save();
+
+    // Log status.change event
+    await logEvent({
+      type: 'status.change',
+      userId: admin.id,
+      problemId: problem._id.toString(),
+      meta: { oldStatus, newStatus: status }
+    });
 
     return res.status(200).json({
       success: true,

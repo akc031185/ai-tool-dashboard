@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
+import { logEvent } from '@/src/lib/logEvent';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import mongoose from 'mongoose';
 
@@ -185,6 +186,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Serialize PDF
     const pdfBytes = await pdfDoc.save();
+
+    // Log pdf.download event
+    await logEvent({
+      type: 'pdf.download',
+      userId,
+      problemId: problem._id.toString(),
+      meta: { pdfSizeBytes: pdfBytes.length }
+    });
 
     // Set headers
     res.setHeader('Content-Type', 'application/pdf');
