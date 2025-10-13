@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     dailyAnalytics.forEach(day => {
       totalProblems += day.problems.created || 0;
-      totalEvents += day.events.reduce((sum, e) => sum + e.count, 0);
+      totalEvents += day.events.reduce((sum: number, e) => sum + e.count, 0);
       day.llmUsage.forEach(usage => {
         totalLLMCalls += usage.totalCalls;
         totalTokensIn += usage.totalTokensIn;
@@ -104,10 +104,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const timeSeries = dailyAnalytics.reverse().map(day => ({
       date: day.date.toISOString().split('T')[0],
       problems: day.problems.created,
-      events: day.events.reduce((sum, e) => sum + e.count, 0),
-      llmCalls: day.llmUsage.reduce((sum, u) => sum + u.totalCalls, 0),
-      tokensIn: day.llmUsage.reduce((sum, u) => sum + u.totalTokensIn, 0),
-      tokensOut: day.llmUsage.reduce((sum, u) => sum + u.totalTokensOut, 0)
+      events: day.events.reduce((sum: number, e) => sum + e.count, 0),
+      llmCalls: day.llmUsage.reduce((sum: number, u) => sum + u.totalCalls, 0),
+      tokensIn: day.llmUsage.reduce((sum: number, u) => sum + u.totalTokensIn, 0),
+      tokensOut: day.llmUsage.reduce((sum: number, u) => sum + u.totalTokensOut, 0)
     }));
 
     return res.status(200).json({
