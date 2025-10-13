@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }, {} as Record<string, number>);
 
     const topDomains = Object.entries(domainCounts)
-      .map(([domain, count]) => ({ domain, count }))
+      .map(([domain, count]: [string, unknown]) => ({ domain, count: count as number }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 

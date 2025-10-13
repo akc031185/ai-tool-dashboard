@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export interface ILLMUsage extends mongoose.Document {
+export interface ILLMUsage {
   at: Date;
   userId?: mongoose.Types.ObjectId;
   problemId?: mongoose.Types.ObjectId;
