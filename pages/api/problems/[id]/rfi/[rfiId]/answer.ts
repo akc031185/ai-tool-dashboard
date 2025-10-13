@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Find RFI
-    const rfi = problem.rfis?.find(r => r._id.toString() === rfiId);
+    const rfi = problem.rfis?.find((r: any) => r._id.toString() === rfiId);
 
     if (!rfi) {
       return res.status(404).json({ message: 'RFI not found' });
