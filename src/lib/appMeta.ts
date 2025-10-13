@@ -17,3 +17,23 @@ export const TRACKER_CTA = {
   label: "Build Plan Tracker",
   href: "/project-tracker"
 };
+
+// A/B Testing: Hero Variants
+export const HERO_VARIANTS = {
+  A: {
+    h1: "Solve Real Estate Investment Problems with AI & Automation",
+    sub: "Describe your real estate challenge—acquisitions, dispositions, capital, or ops. We triage it (AI vs automation), ask targeted follow-ups, and generate a step-by-step build plan you can execute."
+  },
+  B: {
+    h1: "Less friction, more deals—AI & Automation for Real Estate Investors",
+    sub: "Paste your challenge. We classify it (AI vs automation), ask only what's needed, and return a practical plan with a visual workflow and next actions."
+  }
+};
+
+// Fixed SEO metadata (not part of A/B test)
+export const SEO = {
+  title: "Solve Real Estate Investment Problems with AI & Automation | InvestorAI Club",
+  description:
+    "Describe your real estate challenge—acquisitions, dispositions, capital, or ops. We triage it (AI vs automation), ask targeted follow-ups, and generate a step-by-step build plan you can execute.",
+  canonical: "https://www.investoraiclub.com/"
+};

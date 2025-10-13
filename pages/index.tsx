@@ -1,23 +1,47 @@
 import Link from 'next/link';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
-import { APP_TAGLINE, PRIMARY_CTA, SECONDARY_CTA, TRACKER_CTA } from '@/src/lib/appMeta';
+import { useState, useEffect } from 'react';
+import { PRIMARY_CTA, SECONDARY_CTA, TRACKER_CTA, HERO_VARIANTS, SEO } from '@/src/lib/appMeta';
+import { pickVariant, type HeroVariant } from '@/src/lib/ab';
 
 export default function Home() {
   const { data: session } = useSession();
+  const [variant, setVariant] = useState<HeroVariant>("A");
+  const [mounted, setMounted] = useState(false);
 
-  const canonicalUrl = 'https://investoraiclub.com';
+  useEffect(() => {
+    // Determine variant on client-side only
+    const selectedVariant = pickVariant(window.location.search);
+    setVariant(selectedVariant);
+    setMounted(true);
+
+    // Track homepage view with variant (non-blocking)
+    fetch('/api/events/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'home.view',
+        meta: { variant: selectedVariant }
+      })
+    }).catch(() => {
+      // Silently fail - analytics shouldn't block UX
+    });
+  }, []);
+
+  const hero = HERO_VARIANTS[variant];
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'InvestorAI Club',
-    description: APP_TAGLINE,
-    url: canonicalUrl,
+    description: SEO.description,
+    url: SEO.canonical,
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${canonicalUrl}/submit-problem`
+        urlTemplate: `${SEO.canonical}/submit-problem`
       },
       'query-input': 'required name=search_term_string'
     }
@@ -26,16 +50,16 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>InvestorAI Club - Solve Real Estate Problems with AI & Automation</title>
-        <meta name="description" content={APP_TAGLINE} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content="InvestorAI Club - Solve Real Estate Problems with AI & Automation" />
-        <meta property="og:description" content={APP_TAGLINE} />
+        <title>{SEO.title}</title>
+        <meta name="description" content={SEO.description} />
+        <link rel="canonical" href={SEO.canonical} />
+        <meta property="og:title" content={SEO.title} />
+        <meta property="og:description" content={SEO.description} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:url" content={SEO.canonical} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="InvestorAI Club - Solve Real Estate Problems with AI & Automation" />
-        <meta name="twitter:description" content={APP_TAGLINE} />
+        <meta name="twitter:title" content={SEO.title} />
+        <meta name="twitter:description" content={SEO.description} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -49,10 +73,10 @@ export default function Home() {
         <section className="min-h-screen flex flex-col justify-center pt-20 md:pt-24 pb-12">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-5 md:mb-6 drop-shadow-lg leading-tight">
-              Solve Real Estate Investor Problems with AI & Automation
+              {hero.h1}
             </h1>
             <p className="text-lg md:text-xl lg:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed mb-8 md:mb-10">
-              {APP_TAGLINE}
+              {hero.sub}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 md:gap-5 justify-center items-center">
@@ -92,6 +116,13 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      {/* Dev-only variant badge */}
+      {mounted && process.env.NODE_ENV !== 'production' && (
+        <div className="fixed bottom-4 right-4 bg-black/80 text-white px-3 py-2 rounded-lg text-xs font-mono backdrop-blur-sm border border-white/20">
+          Variant: {variant}
+        </div>
+      )}
     </div>
     </>
   );
