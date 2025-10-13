@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireAdmin } from '@/src/lib/authz';
 import dbConnect from '@/src/lib/dbConnect';
 import Problem from '@/src/models/Problem';
+import User from '@/src/models/User';
 import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,19 +20,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect();
 
     const { id } = req.query;
-    const { status } = req.body;
+    const { assigneeId } = req.body;
 
     // Validate ID
     if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid problem ID' });
     }
 
-    // Validate status
-    const validStatuses = ['draft', 'in-progress', 'complete'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: 'Invalid status. Must be one of: draft, in-progress, complete'
-      });
+    // Validate assigneeId if provided
+    if (assigneeId !== null && assigneeId !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(assigneeId)) {
+        return res.status(400).json({ message: 'Invalid assignee ID' });
+      }
+
+      // Check if user exists
+      const assignee = await User.findById(assigneeId);
+      if (!assignee) {
+        return res.status(404).json({ message: 'Assignee not found' });
+      }
     }
 
     // Find problem
@@ -41,23 +47,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ message: 'Problem not found' });
     }
 
-    const oldStatus = problem.status;
+    const oldAssigneeId = problem.assigneeId;
 
-    // Update status
-    problem.status = status;
+    // Update assignee
+    problem.assigneeId = assigneeId ? new mongoose.Types.ObjectId(assigneeId) : undefined;
 
     // Add activity log entry
     if (!problem.activity) {
       problem.activity = [];
     }
 
+    let note = '';
+    if (!assigneeId && oldAssigneeId) {
+      note = 'Problem unassigned';
+    } else if (assigneeId && !oldAssigneeId) {
+      note = 'Problem assigned';
+    } else if (assigneeId && oldAssigneeId) {
+      note = 'Assignee changed';
+    }
+
     problem.activity.push({
       _id: new mongoose.Types.ObjectId(),
       at: new Date(),
       by: new mongoose.Types.ObjectId(admin.id),
-      type: 'status.change',
-      note: `Status changed from "${oldStatus}" to "${status}"`,
-      meta: { oldStatus, newStatus: status }
+      type: 'assign',
+      note,
+      meta: {
+        oldAssigneeId: oldAssigneeId?.toString(),
+        newAssigneeId: assigneeId
+      }
     });
 
     await problem.save();
@@ -66,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       problem: {
         _id: problem._id,
-        status: problem.status,
+        assigneeId: problem.assigneeId,
         updatedAt: problem.updatedAt
       }
     });
@@ -76,10 +94,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    console.error('Update status error:', error);
+    console.error('Update assignee error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to update problem status',
+      error: 'Failed to update problem assignee',
       details: error instanceof Error ? error.message : String(error)
     });
   }

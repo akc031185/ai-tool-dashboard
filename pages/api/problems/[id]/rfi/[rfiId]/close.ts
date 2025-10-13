@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Add X-Robots-Tag header
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
 
-  if (req.method !== 'PATCH') {
+  if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -18,20 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await dbConnect();
 
-    const { id } = req.query;
-    const { status } = req.body;
+    const { id, rfiId } = req.query;
 
-    // Validate ID
+    // Validate problem ID
     if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid problem ID' });
     }
 
-    // Validate status
-    const validStatuses = ['draft', 'in-progress', 'complete'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: 'Invalid status. Must be one of: draft, in-progress, complete'
-      });
+    // Validate RFI ID
+    if (!rfiId || typeof rfiId !== 'string' || !mongoose.Types.ObjectId.isValid(rfiId)) {
+      return res.status(400).json({ message: 'Invalid RFI ID' });
     }
 
     // Find problem
@@ -41,10 +37,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ message: 'Problem not found' });
     }
 
-    const oldStatus = problem.status;
+    // Find RFI
+    const rfi = problem.rfis?.find(r => r._id.toString() === rfiId);
 
-    // Update status
-    problem.status = status;
+    if (!rfi) {
+      return res.status(404).json({ message: 'RFI not found' });
+    }
+
+    // Check if RFI is already closed
+    if (rfi.status === 'closed') {
+      return res.status(400).json({ message: 'RFI is already closed' });
+    }
+
+    const previousStatus = rfi.status;
+
+    // Update RFI status to closed
+    rfi.status = 'closed';
 
     // Add activity log entry
     if (!problem.activity) {
@@ -55,19 +63,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       _id: new mongoose.Types.ObjectId(),
       at: new Date(),
       by: new mongoose.Types.ObjectId(admin.id),
-      type: 'status.change',
-      note: `Status changed from "${oldStatus}" to "${status}"`,
-      meta: { oldStatus, newStatus: status }
+      type: 'rfi.close',
+      note: 'RFI closed',
+      meta: { rfiId: rfi._id.toString(), previousStatus }
     });
 
     await problem.save();
 
     return res.status(200).json({
       success: true,
-      problem: {
-        _id: problem._id,
-        status: problem.status,
-        updatedAt: problem.updatedAt
+      rfi: {
+        _id: rfi._id,
+        question: rfi.question,
+        status: rfi.status,
+        answer: rfi.answer,
+        answeredAt: rfi.answeredAt
       }
     });
   } catch (error) {
@@ -76,10 +86,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    console.error('Update status error:', error);
+    console.error('Close RFI error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to update problem status',
+      error: 'Failed to close RFI',
       details: error instanceof Error ? error.message : String(error)
     });
   }

@@ -19,18 +19,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect();
 
     const { id } = req.query;
-    const { status } = req.body;
+    const { adminLocked } = req.body;
 
     // Validate ID
     if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid problem ID' });
     }
 
-    // Validate status
-    const validStatuses = ['draft', 'in-progress', 'complete'];
-    if (!status || !validStatuses.includes(status)) {
+    // Validate adminLocked
+    if (typeof adminLocked !== 'boolean') {
       return res.status(400).json({
-        message: 'Invalid status. Must be one of: draft, in-progress, complete'
+        message: 'Invalid adminLocked value. Must be a boolean.'
       });
     }
 
@@ -41,10 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ message: 'Problem not found' });
     }
 
-    const oldStatus = problem.status;
+    const oldLockState = problem.adminLocked || false;
 
-    // Update status
-    problem.status = status;
+    // Update lock state
+    problem.adminLocked = adminLocked;
 
     // Add activity log entry
     if (!problem.activity) {
@@ -55,9 +54,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       _id: new mongoose.Types.ObjectId(),
       at: new Date(),
       by: new mongoose.Types.ObjectId(admin.id),
-      type: 'status.change',
-      note: `Status changed from "${oldStatus}" to "${status}"`,
-      meta: { oldStatus, newStatus: status }
+      type: 'lock',
+      note: adminLocked ? 'Problem locked by admin' : 'Problem unlocked by admin',
+      meta: { adminLocked, previousState: oldLockState }
     });
 
     await problem.save();
@@ -66,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       problem: {
         _id: problem._id,
-        status: problem.status,
+        adminLocked: problem.adminLocked,
         updatedAt: problem.updatedAt
       }
     });
@@ -76,10 +75,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    console.error('Update status error:', error);
+    console.error('Update lock error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to update problem status',
+      error: 'Failed to update problem lock state',
       details: error instanceof Error ? error.message : String(error)
     });
   }
