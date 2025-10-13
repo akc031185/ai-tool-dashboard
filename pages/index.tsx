@@ -7,7 +7,7 @@ import { pickVariant, type HeroVariant } from '@/src/lib/ab';
 
 export default function Home() {
   const { data: session } = useSession();
-  const [variant, setVariant] = useState<HeroVariant>("A");
+  const [variant, setVariant] = useState<HeroVariant>("B");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

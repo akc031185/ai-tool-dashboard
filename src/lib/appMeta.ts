@@ -26,7 +26,7 @@ export const HERO_VARIANTS = {
   },
   B: {
     h1: "Less friction, more deals—AI & Automation for Real Estate Investors",
-    sub: "Paste your challenge. We classify it (AI vs automation), ask only what's needed, and return a practical plan with a visual workflow and next actions."
+    sub: "Describe your challenge. We classify it (AI vs automation) based on our targeted questions, and return a practical plan with a visual workflow and next actions."
   }
 };
 

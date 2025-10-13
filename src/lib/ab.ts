@@ -41,8 +41,8 @@ export function pickVariant(search: string): HeroVariant {
     }
   }
 
-  // Default to variant A
-  return "A";
+  // Default to variant B
+  return "B";
 }
 
 /**
