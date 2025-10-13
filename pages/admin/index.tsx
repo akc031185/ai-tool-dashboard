@@ -19,8 +19,29 @@ interface Problem {
     email: string;
     name: string;
   };
+  assigneeId?: {
+    _id: string;
+    email: string;
+    name: string;
+  };
+  adminLocked?: boolean;
+  rfis?: Array<{
+    _id: string;
+    question: string;
+    answer?: string;
+    status: 'open' | 'answered' | 'closed';
+    priority?: 'low' | 'normal' | 'high';
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
+}
+
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
 }
 
 export default function AdminConsole() {
@@ -28,10 +49,12 @@ export default function AdminConsole() {
   const router = useRouter();
 
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [selectedRfiProblem, setSelectedRfiProblem] = useState<Problem | null>(null);
 
   // Filters
   const [kindFilter, setKindFilter] = useState('all');
@@ -56,6 +79,7 @@ export default function AdminConsole() {
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return;
     fetchProblems();
+    fetchUsers();
   }, [sessionStatus, kindFilter, domainFilter, statusFilter, outlineFilter]);
 
   const fetchProblems = async () => {
@@ -86,6 +110,17 @@ export default function AdminConsole() {
       setError(err instanceof Error ? err.message : 'Failed to fetch problems');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users');
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
     }
   };
 
@@ -153,26 +188,68 @@ export default function AdminConsole() {
     }
   };
 
-  const handleStatusAction = async (problemId: string, action: 'lock' | 'finalize') => {
-    if (!confirm(`Are you sure you want to ${action} this problem?`)) return;
-
+  const handleStatusChange = async (problemId: string, newStatus: string) => {
     try {
       const res = await fetch(`/api/admin/problems/${problemId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ status: newStatus })
       });
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || `Failed to ${action}`);
+        throw new Error(error.message || 'Failed to update status');
       }
 
-      setToast(`Problem ${action}ed successfully`);
+      setToast('Status updated successfully');
       setTimeout(() => setToast(''), 3000);
       fetchProblems();
     } catch (err) {
-      setToast(err instanceof Error ? err.message : `Failed to ${action}`);
+      setToast(err instanceof Error ? err.message : 'Failed to update status');
+      setTimeout(() => setToast(''), 3000);
+    }
+  };
+
+  const handleAssigneeChange = async (problemId: string, assigneeId: string | null) => {
+    try {
+      const res = await fetch(`/api/admin/problems/${problemId}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigneeId })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to update assignee');
+      }
+
+      setToast('Assignee updated successfully');
+      setTimeout(() => setToast(''), 3000);
+      fetchProblems();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Failed to update assignee');
+      setTimeout(() => setToast(''), 3000);
+    }
+  };
+
+  const handleLockToggle = async (problemId: string, currentLocked: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/problems/${problemId}/lock`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminLocked: !currentLocked })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to toggle lock');
+      }
+
+      setToast(currentLocked ? 'Problem unlocked' : 'Problem locked');
+      setTimeout(() => setToast(''), 3000);
+      fetchProblems();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Failed to toggle lock');
       setTimeout(() => setToast(''), 3000);
     }
   };
@@ -261,17 +338,16 @@ export default function AdminConsole() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assignee</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kind</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domain</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outline</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RFIs</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {problems.length === 0 ? (
-                  <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No problems found</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No problems found</td></tr>
                 ) : (
                   problems.map((problem) => (
                     <tr key={problem._id} className="hover:bg-gray-50">
@@ -279,26 +355,55 @@ export default function AdminConsole() {
                         {new Date(problem.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{problem.userId.email}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{problem.rawDescription}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {problem.triage?.kind?.length ? (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">{problem.triage.kind.join(', ')}</span>
+                        <select
+                          value={problem.assigneeId?._id || ''}
+                          onChange={(e) => handleAssigneeChange(problem._id, e.target.value || null)}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-purple-500 outline-none"
+                        >
+                          <option value="">Unassigned</option>
+                          {users.map(user => (
+                            <option key={user._id} value={user._id}>{user.email}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        {problem.adminLocked && <span className="mr-2" title="Locked">🔒</span>}
+                        {problem.rawDescription}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <select
+                          value={problem.status}
+                          onChange={(e) => handleStatusChange(problem._id, e.target.value)}
+                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 focus:ring-2 focus:ring-purple-500 outline-none ${
+                            problem.status === 'complete' ? 'bg-green-100 text-green-700' :
+                            problem.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          <option value="draft">draft</option>
+                          <option value="in-progress">in-progress</option>
+                          <option value="complete">complete</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {problem.rfis && problem.rfis.length > 0 ? (
+                          <button
+                            onClick={() => setSelectedRfiProblem(problem)}
+                            className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200"
+                          >
+                            {problem.rfis.length} RFI{problem.rfis.length > 1 ? 's' : ''}
+                          </button>
                         ) : '—'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{problem.triage?.domains?.[0]?.label || '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          problem.status === 'complete' ? 'bg-green-100 text-green-700' :
-                          problem.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                        }`}>{problem.status}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{problem.solutionOutline ? '✓' : '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <Link href={`/problems/${problem._id}`} className="text-purple-600 hover:text-purple-700 font-medium">Open</Link>
-                          <button onClick={() => handleEditTriage(problem)} className="text-blue-600 hover:text-blue-700 font-medium">Edit</button>
-                          <button onClick={() => handleStatusAction(problem._id, 'lock')} disabled={problem.status !== 'draft'} className={`font-medium ${problem.status === 'draft' ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400'}`}>Lock</button>
-                          <button onClick={() => handleStatusAction(problem._id, 'finalize')} disabled={problem.status === 'complete'} className={`font-medium ${problem.status !== 'complete' ? 'text-green-600 hover:text-green-700' : 'text-gray-400'}`}>Finalize</button>
+                          <button
+                            onClick={() => handleLockToggle(problem._id, problem.adminLocked || false)}
+                            className={`font-medium ${problem.adminLocked ? 'text-red-600 hover:text-red-700' : 'text-orange-600 hover:text-orange-700'}`}
+                          >
+                            {problem.adminLocked ? 'Unlock' : 'Lock'}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -340,6 +445,72 @@ export default function AdminConsole() {
               <button onClick={() => setEditingProblem(null)} disabled={saving} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
               <button onClick={saveTriage} disabled={saving} className={`px-4 py-2 rounded-lg font-semibold ${saving ? 'bg-gray-300 text-gray-500' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
                 {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedRfiProblem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">RFIs for Problem</h3>
+                <p className="text-sm text-gray-500 mt-1">{selectedRfiProblem.rawDescription}</p>
+              </div>
+              <button onClick={() => setSelectedRfiProblem(null)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {selectedRfiProblem.rfis && selectedRfiProblem.rfis.length > 0 ? (
+                selectedRfiProblem.rfis.map(rfi => (
+                  <div key={rfi._id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            rfi.status === 'closed' ? 'bg-gray-100 text-gray-700' :
+                            rfi.status === 'answered' ? 'bg-green-100 text-green-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {rfi.status}
+                          </span>
+                          {rfi.priority && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              rfi.priority === 'high' ? 'bg-red-100 text-red-700' :
+                              rfi.priority === 'low' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {rfi.priority}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-medium text-gray-900">{rfi.question}</p>
+                        {rfi.answer && (
+                          <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                            <p className="text-sm text-gray-700">{rfi.answer}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Created: {new Date(rfi.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">No RFIs found</p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button onClick={() => setSelectedRfiProblem(null)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                Close
               </button>
             </div>
           </div>
