@@ -68,11 +68,9 @@ export default function About() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 group"
                 >
-                  <img
-                    src="https://media.licdn.com/dms/image/v2/D5603AQG8k3h3lqsVlw/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1725901862866?e=1734566400&v=beta&t=Zc4GwJ5wYrYwODn0rI3ZZ3GI0WOmMKpn2z6q3UjhkWs"
-                    alt="Abhishek Choudhary LinkedIn Profile"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-500 transition-colors"
-                  />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xl font-bold border-2 border-purple-200 group-hover:border-purple-500 transition-colors">
+                    AC
+                  </div>
                   <div>
                     <div className="flex items-center text-purple-600 group-hover:text-purple-700 font-medium">
                       <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -90,11 +88,9 @@ export default function About() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 group"
                 >
-                  <img
-                    src="https://instagram.fatl1-2.fna.fbcdn.net/v/t51.2885-19/449743267_452514394195029_5932330883662316326_n.jpg?stp=dst-jpg_s150x150&_nc_ht=instagram.fatl1-2.fna.fbcdn.net&_nc_cat=109&_nc_ohc=XCQRs2T_xMcQ7kNvgFuZ3FD&_nc_gid=b9e1234567890abcdef&edm=AOQ1c0wBAAAA&ccb=7-5&oh=00_AYA1234567890abcdefghijklmnopqrstuvwxyz&oe=67123456&_nc_sid=8b3546"
-                    alt="Abhishek Choudhary Instagram Profile"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-500 transition-colors"
-                  />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white text-xl font-bold border-2 border-purple-200 group-hover:border-purple-500 transition-colors">
+                    AC
+                  </div>
                   <div>
                     <div className="flex items-center text-purple-600 group-hover:text-purple-700 font-medium">
                       <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
