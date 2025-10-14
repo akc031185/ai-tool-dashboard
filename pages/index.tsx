@@ -31,7 +31,7 @@ export default function Home() {
 
   const hero = HERO_VARIANTS[variant];
 
-  const structuredData = {
+  const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'InvestorAI Club',
@@ -44,6 +44,34 @@ export default function Home() {
         urlTemplate: `${SEO.canonical}/submit-problem`
       },
       'query-input': 'required name=search_term_string'
+    }
+  };
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'InvestorAI Club',
+    url: 'https://www.investoraiclub.com',
+    logo: 'https://www.investoraiclub.com/logo.png',
+    description: 'AI and automation solutions for real estate investors - from problem triage to actionable build plans',
+    founder: {
+      '@type': 'Person',
+      name: 'Abhishek Choudhary',
+      jobTitle: 'Private Money Lender (PML); Private Money Partner (PMP); Multifamily Investor',
+      url: 'https://www.investoraiclub.com/about',
+      sameAs: [
+        'https://www.linkedin.com/in/abhishek-kumar-choudhary-36903645/',
+        'https://www.instagram.com/dadbuildinglegacy/'
+      ]
+    },
+    sameAs: [
+      'https://www.linkedin.com/in/abhishek-kumar-choudhary-36903645/',
+      'https://www.instagram.com/dadbuildinglegacy/'
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Founder',
+      url: 'https://www.investoraiclub.com/about'
     }
   };
 
@@ -62,7 +90,11 @@ export default function Home() {
         <meta name="twitter:description" content={SEO.description} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </Head>
       <div className="min-h-screen text-white" style={{

@@ -1,14 +1,21 @@
-# Block all user-facing pages except homepage
+# Allow public pages
 User-agent: *
-Allow: /$
+Allow: /
+Allow: /about
+Allow: /how-it-works
+
+# Block authenticated and private pages
 Disallow: /login
 Disallow: /auth/
 Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /workspace/
+Disallow: /dashboard
+Disallow: /workspace
 Disallow: /project-tracker
 Disallow: /submit-problem
 Disallow: /submit-ai-tool
+Disallow: /profile
+Disallow: /forgot-password
+Disallow: /reset-password
 Disallow: /requests/
 Disallow: /project-progress/
 Disallow: /problems/
@@ -16,5 +23,5 @@ Disallow: /problems/
 # Block all API routes
 Disallow: /api/
 
-# Sitemap (if you add one in the future)
-# Sitemap: https://yoursite.com/sitemap.xml
+# Sitemap
+Sitemap: https://www.investoraiclub.com/sitemap.xml
