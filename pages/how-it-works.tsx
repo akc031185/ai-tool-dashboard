@@ -60,24 +60,7 @@ export default function HowItWorks() {
         <meta name="twitter:description" content={`Learn how ${APP_SHORT} helps you build AI and automation solutions in 5 simple steps.`} />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {APP_SHORT}
-            </Link>
-            <nav className="flex gap-4">
-              <Link href="/" className="text-gray-600 hover:text-purple-600 font-medium transition">
-                Home
-              </Link>
-              <Link href="/login" className="text-gray-600 hover:text-purple-600 font-medium transition">
-                Login
-              </Link>
-            </nav>
-          </div>
-        </header>
-
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-20">
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="max-w-4xl mx-auto text-center">
