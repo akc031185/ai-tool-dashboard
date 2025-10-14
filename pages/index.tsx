@@ -105,14 +105,6 @@ export default function Home() {
         {/* Footer */}
         <footer className="py-12 md:py-16 mt-12 md:mt-20 border-t border-white/20">
           <div className="text-center">
-            <div className="mb-4 flex justify-center gap-6">
-              <Link href="/how-it-works" className="text-white/90 hover:text-white font-medium underline">
-                How It Works
-              </Link>
-              <Link href="/about" className="text-white/90 hover:text-white font-medium underline">
-                About
-              </Link>
-            </div>
             <p className="opacity-70 text-xs md:text-sm px-4">
               © 2024 InvestorAI Club - Streamlining real estate investor workflows
             </p>
