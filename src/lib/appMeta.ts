@@ -1,6 +1,6 @@
 // Global app metadata and constants
-export const APP_NAME = "Real Estate Investor Problems—Solved with AI & Automation";
-export const APP_SHORT = "InvestorAI Intake";
+export const APP_NAME = "InvestorAI Club";
+export const APP_SHORT = "InvestorAI Club";
 export const APP_TAGLINE = "Describe your workflow. We triage it (AI vs automation), ask only what's needed, and generate a build plan.";
 
 export const PRIMARY_CTA = {
